@@ -788,10 +788,13 @@ export default function NewListPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 pb-24">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-8">Create New Packing List</h1>
-        
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold">Create a New Trip</h1>
+          <p className="text-gray-500">Let us help you prepare for your journey</p>
+        </div>
+
         <div className="flex justify-between mb-8">
           <div className="flex flex-col items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? "bg-blue-600 text-white" : "bg-gray-200"}`}>
@@ -877,15 +880,15 @@ export default function NewListPage() {
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
-                            className="w-full justify-start text-left font-normal"
+                            className="w-full justify-start text-left font-normal overflow-hidden"
                           >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
                             {destination.start_date ? (
-                              <>
-                                {format(destination.start_date, "MMM d, yyyy")}
+                              <span className="truncate">
+                                {format(destination.start_date, "MMM d")}
                                 {" — "}
                                 {format(destination.end_date, "MMM d, yyyy")}
-                              </>
+                              </span>
                             ) : (
                               <span>Pick a date range</span>
                             )}
@@ -1269,7 +1272,7 @@ export default function NewListPage() {
                     Saving...
                   </>
                 ) : (
-                  "Save Packing List"
+                  "Save Trip"
                 )}
               </Button>
             </CardFooter>

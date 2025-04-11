@@ -403,6 +403,13 @@ export default function ListDetailPage() {
     );
   };
 
+  const formatDateRange = (startDate, endDate) => {
+    if (!startDate || !endDate) return "Dates not set";
+    const start = format(new Date(startDate), "MMM d");
+    const end = format(new Date(endDate), "MMM d, yyyy");
+    return `${start} - ${end}`;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-6">
@@ -426,17 +433,32 @@ export default function ListDetailPage() {
     <div className="p-6 relative">
       <ConfettiEffect active={showConfetti} />
       <div className="max-w-4xl mx-auto">
+        
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate(createPageUrl("Lists"))}
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate(createPageUrl("Trips"))}
+              className="p-1"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold">{getListName()}</h1>
+            <div>
+              <h1 className="text-2xl font-bold line-clamp-1">
+                {list?.name || (list?.destinations?.[0]?.location || "Trip")}
+              </h1>
+              {list?.destinations?.[0] && (
+                <p className="text-gray-500">
+                  {formatDateRange(
+                    list.destinations[0].start_date,
+                    list.destinations[0].end_date
+                  )}
+                </p>
+              )}
+            </div>
           </div>
+        
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

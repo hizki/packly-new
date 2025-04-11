@@ -1,20 +1,18 @@
 
 import React, { useState, useEffect } from "react";
 import { User } from "@/api/entities";
-import { BaseList } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/use-toast";
-import { Bell, Sun, Thermometer, Plus, Trash2, Loader2 } from "lucide-react";
-import BaseListEditor from "../components/settings/BaseListEditor";
+import { Bell, Sun, Thermometer, Loader2, LogOut } from "lucide-react";
 import DeleteAccountDialog from "../components/settings/DeleteAccountDialog";
+import { useNavigate } from "react-router-dom";
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const [settings, setSettings] = useState({
     notifications: true,
     weather_sensitivity: {
@@ -23,10 +21,26 @@ export default function SettingsPage() {
     },
     minimal_mode: false
   });
-  const [activeTab, setActiveTab] = useState("activities");
-  const [baseLists, setBaseLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
+
+  const handleSettingChange = async (newSettings) => {
+    try {
+      await User.updateMyUserData({ settings: newSettings });
+      setSettings(newSettings);
+      toast({
+        title: "Settings updated",
+        description: "Your preferences have been saved"
+      });
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   useEffect(() => {
     loadUserData();
@@ -40,12 +54,6 @@ export default function SettingsPage() {
       if (user.settings) {
         setSettings(user.settings);
       }
-      
-      if (!user.has_initialized_base_lists) {
-        await initializeDefaultBaseLists(user.id);
-      }
-      
-      await loadBaseLists();
     } catch (error) {
       console.error("Error loading user data:", error);
       toast({
@@ -55,109 +63,6 @@ export default function SettingsPage() {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const initializeDefaultBaseLists = async (userId) => {
-    try {
-      const defaultItems = {
-        beach: [
-          { name: "Swimsuit", category: "clothing", quantity: 2 },
-          { name: "Beach towel", category: "gear", quantity: 1 },
-          { name: "Sunscreen", category: "toiletries", quantity: 1 },
-          { name: "Sunglasses", category: "essentials", quantity: 1 }
-        ],
-        camping: [
-          { name: "Tent", category: "gear", quantity: 1 },
-          { name: "Sleeping bag", category: "gear", quantity: 1 },
-          { name: "Flashlight", category: "gear", quantity: 1 },
-          { name: "First aid kit", category: "essentials", quantity: 1 }
-        ],
-        hiking: [
-          { name: "Hiking boots", category: "clothing", quantity: 1 },
-          { name: "Water bottle", category: "gear", quantity: 1 },
-          { name: "Bug spray", category: "toiletries", quantity: 1 }
-        ],
-        business: [
-          { name: "Suit", category: "clothing", quantity: 1 },
-          { name: "Dress shoes", category: "clothing", quantity: 1 },
-          { name: "Laptop", category: "tech", quantity: 1 },
-          { name: "Business cards", category: "essentials", quantity: 1 }
-        ]
-      };
-      
-      await Promise.all([
-        BaseList.create({
-          list_type: "activity", 
-          category: "beach", 
-          items: defaultItems.beach,
-          owner_id: userId,
-          is_default: true
-        }),
-        BaseList.create({
-          list_type: "activity", 
-          category: "camping", 
-          items: defaultItems.camping,
-          owner_id: userId,
-          is_default: true
-        }),
-        BaseList.create({
-          list_type: "activity", 
-          category: "hiking", 
-          items: defaultItems.hiking,
-          owner_id: userId,
-          is_default: true
-        }),
-        BaseList.create({
-          list_type: "activity", 
-          category: "business", 
-          items: defaultItems.business,
-          owner_id: userId,
-          is_default: true
-        })
-      ]);
-      
-      await Promise.all([
-        BaseList.create({
-          list_type: "accommodation",
-          category: "hotel",
-          items: [
-            { name: "Hotel address", category: "essentials", quantity: 1 },
-            { name: "Booking confirmation", category: "essentials", quantity: 1 }
-          ],
-          owner_id: userId,
-          is_default: true
-        }),
-        BaseList.create({
-          list_type: "accommodation",
-          category: "camping",
-          items: [
-            { name: "Camping permit", category: "essentials", quantity: 1 },
-            { name: "Site reservation", category: "essentials", quantity: 1 }
-          ],
-          owner_id: userId,
-          is_default: true
-        })
-      ]);
-      
-      await User.updateMyUserData({ has_initialized_base_lists: true });
-      
-      toast({
-        title: "Default lists created",
-        description: "Your account has been set up with default packing lists"
-      });
-    } catch (error) {
-      console.error("Error initializing default base lists:", error);
-    }
-  };
-
-  const loadBaseLists = async () => {
-    try {
-      const user = await User.me();
-      const lists = await BaseList.filter({ owner_id: user.id });
-      setBaseLists(lists);
-    } catch (error) {
-      console.error("Error loading base lists:", error);
     }
   };
 
@@ -178,6 +83,20 @@ export default function SettingsPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await User.logout();
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-6">
@@ -192,7 +111,10 @@ export default function SettingsPage() {
   return (
     <div className="p-6">
       <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-2xl font-bold mb-8">Settings</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Settings</h1>
+          <p className="text-gray-500">Manage your account and preferences</p>
+        </div>
 
         <Card>
           <CardHeader>
@@ -207,9 +129,10 @@ export default function SettingsPage() {
               <Switch
                 id="notifications"
                 checked={settings.notifications}
-                onCheckedChange={(checked) => 
-                  setSettings(prev => ({ ...prev, notifications: checked }))
-                }
+                onCheckedChange={(checked) => {
+                  const newSettings = { ...settings, notifications: checked };
+                  handleSettingChange(newSettings);
+                }}
               />
             </div>
           </CardContent>
@@ -230,15 +153,16 @@ export default function SettingsPage() {
                 min={0}
                 max={20}
                 step={1}
-                onValueChange={([value]) => 
-                  setSettings(prev => ({
-                    ...prev,
+                onValueChange={([value]) => {
+                  const newSettings = {
+                    ...settings,
                     weather_sensitivity: {
-                      ...prev.weather_sensitivity,
+                      ...settings.weather_sensitivity,
                       cold_threshold: value
                     }
-                  }))
-                }
+                  };
+                  handleSettingChange(newSettings);
+                }}
               />
               <p className="text-sm text-gray-500">
                 Items will be added for cold weather below {settings.weather_sensitivity.cold_threshold}°C
@@ -252,15 +176,16 @@ export default function SettingsPage() {
                 min={20}
                 max={40}
                 step={1}
-                onValueChange={([value]) => 
-                  setSettings(prev => ({
-                    ...prev,
+                onValueChange={([value]) => {
+                  const newSettings = {
+                    ...settings,
                     weather_sensitivity: {
-                      ...prev.weather_sensitivity,
+                      ...settings.weather_sensitivity,
                       hot_threshold: value
                     }
-                  }))
-                }
+                  };
+                  handleSettingChange(newSettings);
+                }}
               />
               <p className="text-sm text-gray-500">
                 Items will be added for hot weather above {settings.weather_sensitivity.hot_threshold}°C
@@ -282,9 +207,10 @@ export default function SettingsPage() {
               <Switch
                 id="minimal_mode"
                 checked={settings.minimal_mode}
-                onCheckedChange={(checked) => 
-                  setSettings(prev => ({ ...prev, minimal_mode: checked }))
-                }
+                onCheckedChange={(checked) => {
+                  const newSettings = { ...settings, minimal_mode: checked };
+                  handleSettingChange(newSettings);
+                }}
               />
             </div>
             <p className="text-sm text-gray-500 mt-2">
@@ -295,69 +221,35 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>My Base Packing Lists</CardTitle>
+            <CardTitle>Account</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-4 w-full grid grid-cols-3">
-                <TabsTrigger value="activities" className="text-xs sm:text-sm">Activities</TabsTrigger>
-                <TabsTrigger value="accommodation" className="text-xs sm:text-sm">Accommodation</TabsTrigger>
-                <TabsTrigger value="companions" className="text-xs sm:text-sm">Companions</TabsTrigger>
-              </TabsList>
-
-              {activeTab === "activities" && (
-                <BaseListEditor 
-                  lists={baseLists.filter(l => l.list_type === "activity")}
-                  listType="activity"
-                  categories={["beach", "camping", "climbing", "hiking", "partying", "business", "sightseeing"]}
-                  onUpdate={loadBaseLists}
-                />
-              )}
-
-              {activeTab === "accommodation" && (
-                <BaseListEditor 
-                  lists={baseLists.filter(l => l.list_type === "accommodation")}
-                  listType="accommodation"
-                  categories={["hotel", "camping", "glamping", "couch_surfing", "airbnb"]}
-                  onUpdate={loadBaseLists}
-                />
-              )}
-
-              {activeTab === "companions" && (
-                <BaseListEditor 
-                  lists={baseLists.filter(l => l.list_type === "companion")}
-                  listType="companion"
-                  categories={["alone", "spouse", "friends", "family"]}
-                  onUpdate={loadBaseLists}
-                />
-              )}
-            </Tabs>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start text-red-600 hover:text-red-700"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
           </CardContent>
         </Card>
 
-        <Card className="border-red-200">
+        <Card className="border-red-200 bg-red-50">
           <CardHeader>
-            <CardTitle className="text-red-600">Danger Zone</CardTitle>
-            <CardDescription>
-              Irreversible and destructive actions
+            <CardTitle className="text-red-600">Delete Account</CardTitle>
+            <CardDescription className="text-red-500">
+              Permanently delete your account and all associated data
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
-                <div>
-                  <h3 className="font-medium text-red-900">Delete Account</h3>
-                  <p className="text-sm text-red-600">
-                    Permanently delete your account and all associated data
-                  </p>
-                </div>
-                <Button 
-                  variant="destructive"
-                  onClick={() => setDeleteAccountDialogOpen(true)}
-                >
-                  Delete Account
-                </Button>
-              </div>
+            <div className="flex justify-end">
+              <Button 
+                variant="destructive"
+                onClick={() => setDeleteAccountDialogOpen(true)}
+              >
+                Delete Account
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -366,15 +258,6 @@ export default function SettingsPage() {
           open={deleteAccountDialogOpen} 
           onOpenChange={setDeleteAccountDialogOpen}
         />
-
-        <div className="flex justify-end">
-          <Button 
-            onClick={saveSettings}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Save Settings
-          </Button>
-        </div>
       </div>
     </div>
   );

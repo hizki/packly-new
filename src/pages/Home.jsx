@@ -10,6 +10,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, differenceInDays } from "date-fns";
 import LottieSpinner from "../components/ui/lottie-spinner";
+import { toast } from "@/components/ui/use-toast";
+import { withRetry } from "../components/utils/api-helpers";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -27,7 +29,7 @@ export default function HomePage() {
   const loadUserAndLists = async () => {
     setLoading(true);
     try {
-      const currentUser = await User.me();
+      const currentUser = await withRetry(() => User.me());
       setUser(currentUser);
       
       if (!currentUser.has_initialized_base_lists) {
@@ -37,6 +39,11 @@ export default function HomePage() {
       await loadLists(currentUser.id);
     } catch (error) {
       console.error("Error loading user data:", error);
+      toast({
+        title: "Error loading user data",
+        description: "Please try again in a moment",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -44,9 +51,14 @@ export default function HomePage() {
 
   const initializeUser = async (userId) => {
     try {
-      await User.updateMyUserData({ has_initialized_base_lists: true });
+      await withRetry(() => User.updateMyUserData({ has_initialized_base_lists: true }));
     } catch (error) {
       console.error("Error initializing user:", error);
+      toast({
+        title: "Error initializing user",
+        description: "Please try again in a moment",
+        variant: "destructive"
+      });
     }
   };
 
@@ -54,8 +66,8 @@ export default function HomePage() {
     try {
       if (!lists || lists.length === 0) return;
 
-      const user = await User.me();
-      const tipLists = await TipList.filter({ owner_id: user.id });
+      const user = await withRetry(() => User.me());
+      const tipLists = await withRetry(() => TipList.filter({ owner_id: user.id }));
       
       for (const list of lists) {
         if (!list.destinations || list.destinations.length === 0) continue;
@@ -82,14 +94,18 @@ export default function HomePage() {
       }
     } catch (error) {
       console.error('Error checking for upcoming tips:', error);
+      toast({
+        title: "Error checking for upcoming tips",
+        description: "Please try again in a moment",
+        variant: "destructive"
+      });
     }
   };
 
   const loadLists = async (userId) => {
     try {
-      const lists = await PackingList.filter(
-        { owner_id: userId },
-        "-created_date"
+      const lists = await withRetry(() => 
+        PackingList.filter({ owner_id: userId }, "-created_date")
       );
       
       setRecentLists(lists.slice(0, 3));
@@ -99,6 +115,11 @@ export default function HomePage() {
       findUpcomingTrip(lists);
     } catch (error) {
       console.error("Error loading lists:", error);
+      toast({
+        title: "Error loading lists",
+        description: "Please try again in a moment",
+        variant: "destructive"
+      });
     }
   };
   
@@ -266,7 +287,7 @@ export default function HomePage() {
           <Link to={createPageUrl("New")}>
             <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-5 h-5 mr-2" />
-              Create New Packing List
+              Create New Trip
             </Button>
           </Link>
         </div>
@@ -277,9 +298,9 @@ export default function HomePage() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Star className="w-5 h-5 text-yellow-400" />
-                  Favorite Lists
+                  Favorite Trips
                 </h2>
-                <Link to={createPageUrl("Lists")}>
+                <Link to={createPageUrl("Trips")}>
                   <Button variant="ghost" size="sm">View All</Button>
                 </Link>
               </div>
@@ -334,9 +355,9 @@ export default function HomePage() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <ListChecks className="w-5 h-5 text-blue-500" />
-                  Recent Lists
+                  Recent Trips
                 </h2>
-                <Link to={createPageUrl("Lists")}>
+                <Link to={createPageUrl("Trips")}>
                   <Button variant="ghost" size="sm">View All</Button>
                 </Link>
               </div>

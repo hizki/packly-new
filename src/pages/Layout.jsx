@@ -1,155 +1,89 @@
 
-import React, { useState, useEffect } from "react";
+
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { FileText, LayoutDashboard, Menu, X, Settings, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ListChecks, LayoutDashboard, Plus, Briefcase, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { User } from "@/api/entities";
-import { toast } from "@/components/ui/use-toast";
+import { useLocation } from "react-router-dom";
 
 export default function Layout({ children, currentPageName }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Disable pinch-to-zoom
-  useEffect(() => {
-    document.addEventListener('touchmove', function(event) {
-      if (event.scale !== 1) { 
-        event.preventDefault();
-      }
-    }, { passive: false });
-    
-    return () => {
-      document.removeEventListener('touchmove', function(event) {
-        if (event.scale !== 1) {
-          event.preventDefault();
-        }
-      });
-    };
-  }, []);
-
-  const handleLogoClick = () => {
-    navigate(createPageUrl("Home"));
-    setSidebarOpen(false);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await User.logout();
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out"
-      });
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
+  const isCurrentPath = (path) => {
+    return location.pathname === path;
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={cn(
-        "fixed top-0 left-0 z-50 h-full w-64 bg-white border-r transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex items-center justify-between p-4">
-          <div 
-            className="text-xl font-bold flex items-center gap-2 cursor-pointer" 
-            onClick={handleLogoClick}
-          >
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/44165e_thehizki_Minimalist_modern_web_app_logo_for_a_travel_and_packin_e1d8508e-b43c-44a9-88f4-186b1b61ef74.png" 
-              alt="Packly Logo" 
-              className="h-8 w-auto"
-            />
-            Packly
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="h-6 w-6" />
-          </Button>
-        </div>
-        <nav className="px-4 py-2 flex flex-col h-[calc(100%-80px)] justify-between">
-          <div className="space-y-1">
-            <Link
-              to={createPageUrl("Home")}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              Home
-            </Link>
-            <Link
-              to={createPageUrl("Lists")}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <FileText className="w-5 h-5" />
-              My Lists
-            </Link>
-            <Link
-              to={createPageUrl("New")}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <FileText className="w-5 h-5" />
-              New List
-            </Link>
-            <Link
-              to={createPageUrl("Settings")}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <Settings className="w-5 h-5" />
-              Settings
-            </Link>
-          </div>
-          
-          <div className="mt-auto">
-            <Button 
-              variant="ghost" 
-              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg w-full justify-start"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-5 h-5" />
-              Logout
-            </Button>
-          </div>
-        </nav>
-      </aside>
-
+    <div className="flex flex-col h-screen bg-gray-100">
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        {/* Mobile header */}
-        <header className="md:hidden bg-white border-b px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
-        </header>
+      <main className="flex-1 overflow-auto pb-20">
+        {children}
+      </main>
 
-        {/* Main content area */}
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
-      </div>
+      {/* Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+        <div className="h-16 max-w-md mx-auto px-4 grid grid-cols-5 items-center">
+          <Link
+            to={createPageUrl("Home")}
+            className={cn(
+              "flex flex-col items-center gap-1",
+              isCurrentPath('/') ? "text-blue-600" : "text-gray-600"
+            )}
+          >
+            <LayoutDashboard className="w-5 h-5" />
+            <span className="text-xs">Home</span>
+          </Link>
+
+          <Link
+            to={createPageUrl("Trips")}
+            className={cn(
+              "flex flex-col items-center gap-1",
+              isCurrentPath('/Trips') ? "text-blue-600" : "text-gray-600"
+            )}
+          >
+            <ListChecks className="w-5 h-5" />
+            <span className="text-xs">Trips</span>
+          </Link>
+
+          <Link
+            to={createPageUrl("ListManager")}
+            className={cn(
+              "flex flex-col items-center gap-1",
+              isCurrentPath('/ListManager') ? "text-blue-600" : "text-gray-600"
+            )}
+          >
+            <Briefcase className="w-5 h-5" />
+            <span className="text-xs">Lists</span>
+          </Link>
+
+          <Link
+            to={createPageUrl("Settings")}
+            className={cn(
+              "flex flex-col items-center gap-1",
+              isCurrentPath('/Settings') ? "text-blue-600" : "text-gray-600"
+            )}
+          >
+            <User className="w-5 h-5" />
+            <span className="text-xs">Profile</span>
+          </Link>
+
+          <Link
+            to={createPageUrl("New")}
+            className="flex flex-col items-center -mt-8"
+          >
+            <div className="h-14 w-14 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+              <Plus className="w-8 h-8 text-white" />
+            </div>
+            <span className="text-xs mt-1 text-gray-600">New</span>
+          </Link>
+        </div>
+
+        {/* Safe Area Padding for iOS */}
+        <div className="h-[env(safe-area-inset-bottom)] bg-white" />
+      </nav>
     </div>
   );
 }
+

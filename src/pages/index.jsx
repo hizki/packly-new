@@ -10,6 +10,14 @@ import New from "./New";
 
 import ListDetail from "./ListDetail";
 
+import BaseListManager from "./BaseListManager";
+
+import Trips from "./Trips";
+
+import ListManager from "./ListManager";
+
+import ListEditor from "./ListEditor";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -23,6 +31,14 @@ const PAGES = {
     New: New,
     
     ListDetail: ListDetail,
+    
+    BaseListManager: BaseListManager,
+    
+    Trips: Trips,
+    
+    ListManager: ListManager,
+    
+    ListEditor: ListEditor,
     
 }
 
@@ -60,6 +76,14 @@ function PagesContent() {
                 <Route path="/New" element={<New />} />
                 
                 <Route path="/ListDetail" element={<ListDetail />} />
+                
+                <Route path="/BaseListManager" element={<BaseListManager />} />
+                
+                <Route path="/Trips" element={<Trips />} />
+                
+                <Route path="/ListManager" element={<ListManager />} />
+                
+                <Route path="/ListEditor" element={<ListEditor />} />
                 
             </Routes>
         </Layout>

@@ -1,0 +1,521 @@
+
+import React, { useState, useEffect, useRef } from "react";
+import { List } from "@/api/entities";
+import { User } from "@/api/entities";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/components/ui/use-toast";
+import { 
+  ArrowLeft, Loader2, Plus, Tag, Trash2, Save
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { useSearchParams } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { withRetry } from "../components/utils/api-helpers";
+
+export default function ListEditorPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const listType = searchParams.get("type");
+  const categoryId = searchParams.get("category");
+  
+  const [loading, setLoading] = useState(true);
+  const [list, setList] = useState(null);
+  const [items, setItems] = useState([]);
+  const [editingName, setEditingName] = useState(false);
+  const [selectedIcon, setSelectedIcon] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [listName, setListName] = useState(''); // Add this state for the list name
+  
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemCategory, setNewItemCategory] = useState("essentials");
+  const [newItemQuantity, setNewItemQuantity] = useState(1);
+  const nameInputRef = useRef(null);
+
+  const listTypeDetails = {
+    activity: {
+      categories: [
+        { id: "beach", label: "Beach Trip", icon: "🏖️" },
+        { id: "camping", label: "Camping", icon: "🏕️" },
+        { id: "climbing", label: "Climbing", icon: "🧗" },
+        { id: "hiking", label: "Hiking", icon: "🥾" },
+        { id: "partying", label: "Party", icon: "🎉" },
+        { id: "business", label: "Business", icon: "💼" },
+        { id: "sightseeing", label: "Sightseeing", icon: "🏛️" }
+      ]
+    },
+    accommodation: {
+      categories: [
+        { id: "hotel", label: "Hotel", icon: "🏨" },
+        { id: "camping", label: "Camping", icon: "🏕️" },
+        { id: "glamping", label: "Glamping", icon: "⛺" },
+        { id: "couch_surfing", label: "Couch Surfing", icon: "🛋️" },
+        { id: "airbnb", label: "Airbnb", icon: "🏠" }
+      ]
+    },
+    companion: {
+      categories: [
+        { id: "alone", label: "Solo Travel", icon: "🧍" },
+        { id: "spouse", label: "With Partner", icon: "💑" },
+        { id: "friends", label: "With Friends", icon: "👥" },
+        { id: "family", label: "With Family", icon: "👨‍👩‍👧" }
+      ]
+    }
+  };
+
+  const itemCategories = [
+    { value: "clothing", label: "Clothing" },
+    { value: "toiletries", label: "Toiletries" },
+    { value: "tech", label: "Tech" },
+    { value: "gear", label: "Gear" },
+    { value: "essentials", label: "Essentials" }
+  ];
+
+  const selectedCategory = listTypeDetails[listType]?.categories.find(
+    c => c.id === categoryId
+  );
+
+  // List of emojis for the current list type
+  const availableEmojis = listTypeDetails[listType]?.categories.map(c => c.icon) || [];
+  
+  // Add more emojis related to each type
+  const additionalEmojis = {
+    activity: [
+      "🏄‍♂️", "🚴‍♀️", "🧘‍♀️", "🏂", "🏊‍♂️", "🚶‍♀️", "⛷️", "🛹", "🎣", "🎯", "🎭", "🏓",
+      "🏃‍♂️", "🚣‍♀️", "⚽", "🎾", "🏸", "🏹", "🤿", "🎪", "🎨", "🎰", "🎲"
+    ],
+    accommodation: [
+      "🏡", "🛖", "🏘️", "🏚️", "🏙️", "🛏️", "🏰", "⛩️", "⛪", "🏢",
+      "🏪", "🏨", "🌄", "🏔️", "🗺️", "🎪", "🏕️", "🌃", "🏦", "🏛️", "🏭", "🏬", "🗼"
+    ],
+    companion: [
+      "👨‍👩‍👦", "👨‍👨‍👧‍👧", "👩‍👩‍👦‍👦", "👶", "🧒", "👴", "👵", "🐕", "🐈",
+      "👥", "👫", "👬", "👭", "🧑‍🤝‍🧑", "👯", "👯‍♂️", "👪", "🐶", "🦮", "🐱", "🐰"
+    ]
+  };
+  
+  const allEmojis = [...new Set([...availableEmojis, ...(additionalEmojis[listType] || [])])];
+
+  useEffect(() => {
+    if (listType && categoryId) {
+      loadList();
+    } else {
+      navigate(createPageUrl("ListManager"));
+    }
+  }, [listType, categoryId]);
+
+  useEffect(() => {
+    if (editingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [editingName]);
+
+  const loadList = async () => {
+    setLoading(true);
+    try {
+      const user = await withRetry(() => User.me());
+      const lists = await withRetry(() => 
+        List.filter({ 
+          owner_id: user.id,
+          list_type: listType
+        })
+      );
+      
+      const existingList = lists.find(l => l.category === categoryId);
+      
+      if (existingList) {
+        setList(existingList);
+        setItems(existingList.items || []);
+        setListName(existingList.name || selectedCategory?.label);
+        setSelectedIcon(existingList.icon || selectedCategory?.icon);
+      } else {
+        const newList = {
+          list_type: listType,
+          category: categoryId,
+          items: [],
+          owner_id: user.id,
+          name: selectedCategory?.label
+        };
+        setList(newList);
+        setListName(selectedCategory?.label);
+        setItems([]);
+        setSelectedIcon(selectedCategory?.icon);
+      }
+    } catch (error) {
+      console.error("Error loading list:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load list. Please try again in a moment.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddItem = () => {
+    if (!newItemName.trim()) return;
+
+    const newItem = {
+      name: newItemName,
+      category: newItemCategory,
+      quantity: parseInt(newItemQuantity),
+      weather_dependent: false,
+      weather_type: "any"
+    };
+
+    setItems([...items, newItem]);
+    setNewItemName("");
+    setNewItemQuantity(1);
+  };
+
+  const handleRemoveItem = (index) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleSaveList = async () => {
+    try {
+      if (list?.id) {
+        await List.update(list.id, {
+          items: items
+        });
+      } else {
+        await List.create({
+          list_type: listType,
+          category: categoryId,
+          items: items,
+          owner_id: list.owner_id,
+          is_default: false,
+          name: listName
+        });
+      }
+
+      toast({
+        title: "Success",
+        description: "List saved successfully"
+      });
+
+      navigate(createPageUrl("ListManager"));
+    } catch (error) {
+      console.error("Error saving list:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save list",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteList = async () => {
+    try {
+      if (list?.id) {
+        await List.delete(list.id);
+        toast({
+          title: "List deleted",
+          description: "Your list has been deleted successfully"
+        });
+        navigate(createPageUrl("ListManager"));
+      }
+    } catch (error) {
+      console.error("Error deleting list:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete list",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleNameChange = async (newName) => {
+    try {
+      if (!newName.trim()) return;
+      
+      if (list?.id) {
+        // Update the list in the database with retry
+        await withRetry(() => 
+          List.update(list.id, { name: newName })
+        );
+        
+        // Update states
+        setList(prev => ({
+          ...prev,
+          name: newName
+        }));
+        setListName(newName);
+        
+        toast({
+          title: "Success",
+          description: "List name updated"
+        });
+      } else {
+        setListName(newName);
+      }
+    } catch (error) {
+      console.error("Error updating list name:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update list name. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleNameBlur = () => {
+    if (nameInputRef.current && nameInputRef.current.value.trim()) {
+      handleNameChange(nameInputRef.current.value);
+    }
+    setEditingName(false);
+  };
+
+  const handleNameKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (nameInputRef.current && nameInputRef.current.value.trim()) {
+        handleNameChange(nameInputRef.current.value);
+      }
+      setEditingName(false);
+    }
+  };
+
+  const handleEmojiSelect = async (emoji) => {
+    setSelectedIcon(emoji);
+    
+    // Update the icon in the database if the list exists
+    if (list?.id) {
+      try {
+        await List.update(list.id, {
+          icon: emoji
+        });
+        
+        toast({
+          title: "Success",
+          description: "List icon updated"
+        });
+      } catch (error) {
+        console.error("Error updating list icon:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update list icon",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full p-6">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p>Loading list details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-24">
+      <div className="bg-white border-b">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate(createPageUrl("ListManager"))}
+                className="mr-2"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <span className="text-2xl cursor-pointer hover:bg-gray-100 p-1 rounded-md">
+                        {selectedIcon || selectedCategory?.icon}
+                      </span>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72">
+                      <div className="grid grid-cols-6 gap-2">
+                        {allEmojis.map((emoji, i) => (
+                          <div 
+                            key={i}
+                            className="p-2 text-xl cursor-pointer text-center hover:bg-gray-100 rounded"
+                            onClick={() => handleEmojiSelect(emoji)}
+                          >
+                            {emoji}
+                          </div>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  {editingName ? (
+                    <Input
+                      ref={nameInputRef}
+                      defaultValue={listName}
+                      onBlur={handleNameBlur}
+                      onKeyDown={handleNameKeyDown}
+                      className="text-xl font-bold h-8 py-0"
+                      autoFocus
+                    />
+                  ) : (
+                    <h1 
+                      className="text-xl font-bold cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
+                      onClick={() => setEditingName(true)}
+                    >
+                      {listName}
+                    </h1>
+                  )}
+                </div>
+                <p className="text-gray-500">Edit packing list items</p>
+              </div>
+            </div>
+
+            {/* Delete Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDeleteDialogOpen(true)}
+              className="h-9 w-9 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Add new item */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Add New Item</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Input
+                placeholder="Item name"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                className="flex-1"
+              />
+              <Select value={newItemCategory} onValueChange={setNewItemCategory}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {itemCategories.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  min="1"
+                  value={newItemQuantity}
+                  onChange={(e) => setNewItemQuantity(e.target.value)}
+                  className="w-24"
+                />
+                <span className="text-sm text-gray-500">qty</span>
+              </div>
+            </div>
+            <Button onClick={handleAddItem} className="w-full">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Item
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Items list */}
+        <Card>
+          <CardHeader>
+            <CardTitle>List Items</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {items.map((item, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 bg-white rounded-lg border"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="font-medium">{item.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Tag className="w-3 h-3 text-gray-400" />
+                      <span className="text-sm text-gray-500">
+                        {itemCategories.find(cat => cat.value === item.category)?.label}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        × {item.quantity}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveItem(index)}
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </Button>
+              </div>
+            ))}
+
+            {items.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No items added yet. Add some items to your list.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Save button */}
+        <div className="flex justify-end">
+          <Button onClick={handleSaveList} className="bg-blue-600 hover:bg-blue-700">
+            <Save className="w-4 h-4 mr-2" />
+            Save List
+          </Button>
+        </div>
+      </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete List</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this list? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={handleDeleteList}
+            >
+              Delete List
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

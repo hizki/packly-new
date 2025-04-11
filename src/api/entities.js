@@ -7,6 +7,8 @@ export const BaseList = base44.entities.BaseList;
 
 export const TipList = base44.entities.TipList;
 
+export const List = base44.entities.List;
+
 
 
 // auth sdk:
