@@ -1,9 +1,8 @@
-// This file previously contained base44 integrations
-// All functionality has been migrated to native implementations
-// File kept for potential future integrations
+// Future integrations and external services
+// This file serves as a central hub for any external API integrations
 
 export const Integrations = {
-  // Future integrations can be added here
+  // Add future integrations here as needed
 }
 
 
