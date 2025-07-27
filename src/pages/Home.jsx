@@ -29,19 +29,22 @@ export default function HomePage() {
   const loadUserAndLists = async () => {
     setLoading(true);
     try {
-      const currentUser = await withRetry(() => User.me());
+      const currentUser = await withRetry(() => User.getCurrentUser());
       setUser(currentUser);
       
-      if (!currentUser.has_initialized_base_lists) {
+      if (currentUser && !currentUser.has_initialized_base_lists) {
         await initializeUser(currentUser.id);
       }
       
-      await loadLists(currentUser.id);
+      if (currentUser) {
+        await loadLists(currentUser.id);
+      }
     } catch (error) {
       console.error("Error loading user data:", error);
+      // User is authenticated at this point, so this is likely a data loading issue
       toast({
-        title: "Error loading user data",
-        description: "Please try again in a moment",
+        title: "Error loading data",
+        description: "Some features may not work properly. Please refresh the page.",
         variant: "destructive"
       });
     } finally {
@@ -201,7 +204,7 @@ export default function HomePage() {
         <div className="text-center py-8">
           <div className="flex justify-center mb-4" onClick={handleLogoClick}>
             <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/44165e_thehizki_Minimalist_modern_web_app_logo_for_a_travel_and_packin_e1d8508e-b43c-44a9-88f4-186b1b61ef74.png" 
+              src="/packly-logo.png" 
               alt="Packly Logo" 
               className="h-24 w-auto cursor-pointer"
             />

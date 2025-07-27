@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { User } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -9,10 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { Bell, Sun, Thermometer, Loader2, LogOut } from "lucide-react";
 import DeleteAccountDialog from "../components/settings/DeleteAccountDialog";
-import { useNavigate } from "react-router-dom";
-
 export default function SettingsPage() {
-  const navigate = useNavigate();
   const [settings, setSettings] = useState({
     notifications: true,
     weather_sensitivity: {
@@ -52,7 +49,25 @@ export default function SettingsPage() {
       const user = await User.me();
       
       if (user.settings) {
-        setSettings(user.settings);
+        // Merge loaded settings with defaults to ensure all required properties exist
+        const defaultSettings = {
+          notifications: true,
+          weather_sensitivity: {
+            cold_threshold: 15,
+            hot_threshold: 25
+          },
+          minimal_mode: false
+        };
+        
+        const mergedSettings = {
+          ...defaultSettings,
+          ...user.settings,
+          weather_sensitivity: {
+            ...defaultSettings.weather_sensitivity,
+            ...user.settings.weather_sensitivity
+          }
+        };
+        setSettings(mergedSettings);
       }
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -66,22 +81,7 @@ export default function SettingsPage() {
     }
   };
 
-  const saveSettings = async () => {
-    try {
-      await User.updateMyUserData({ settings });
-      toast({
-        title: "Settings saved",
-        description: "Your preferences have been updated successfully."
-      });
-    } catch (error) {
-      console.error("Error saving settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
+
 
   const handleLogout = async () => {
     try {

@@ -37,7 +37,8 @@ const toastVariants = cva(
   }
 );
 
-const Toast = React.forwardRef(({ className, variant, ...props }, ref) => {
+const Toast = React.forwardRef(({ className, variant, onOpenChange, ...props }, ref) => {
+  // Extract onOpenChange and don't pass it to the div element
   return (
     <div
       ref={ref}

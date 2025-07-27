@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarIcon, MapPin, Check, Loader2, Cloud, Thermometer, Sun, CloudRain, XCircle, Plus, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { InvokeLLM } from "@/api/integrations";
+
 import LottieSpinner from "../components/ui/lottie-spinner";
 import { addDays } from "date-fns";
 import { format } from "date-fns";
@@ -663,46 +663,75 @@ export default function NewListPage() {
         .map(d => `${d.location} (${format(d.start_date, "MMM d")} to ${format(d.end_date, "MMM d")})`)
         .join(", ");
       
-      const prompt = `
-        Create a comprehensive packing list for a trip to ${destinationsText}. 
-        Trip details:
-        - Weather: ${weatherType} (${hasWeatherData ? `${avgTemp}°C average` : 'unknown'})
-        - Activities: ${formData.activities.join(", ")}
-        - Accommodation: ${formData.accommodation}
-        - Traveling with: ${formData.companions.length > 0 ? formData.companions.join(", ") : "alone"}
-        - Available amenities: ${formData.amenities.join(", ") || "none"}
-        
-        I already have these items on my list:
-        ${baseItems.map(item => `- ${item.name} (${item.category})`).join("\n")}
-        
-        Generate additional items to pack organized by category. Each item should have a name, category (clothing, toiletries, tech, gear, essentials), and quantity.
-        Focus on weather-appropriate items for ${weatherType} weather.
-      `;
+      // Generate static suggestions based on weather and activities
+      const generateStaticSuggestions = (weatherType, activities, accommodation) => {
+        const suggestions = {
+          cold: [
+            { name: "Thermal Underwear", category: "clothing", quantity: 2, is_packed: false, weather_dependent: true },
+            { name: "Warm Jacket", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
+            { name: "Gloves", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
+            { name: "Scarf", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
+            { name: "Beanie", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
+            { name: "Warm Socks", category: "clothing", quantity: 3, is_packed: false, weather_dependent: true }
+          ],
+          hot: [
+            { name: "Sunscreen", category: "toiletries", quantity: 1, is_packed: false, weather_dependent: true },
+            { name: "Sunglasses", category: "essentials", quantity: 1, is_packed: false, weather_dependent: true },
+            { name: "Sun Hat", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
+            { name: "Sandals", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
+            { name: "Light Shirts", category: "clothing", quantity: 3, is_packed: false, weather_dependent: true },
+            { name: "Shorts", category: "clothing", quantity: 2, is_packed: false, weather_dependent: true }
+          ],
+          mild: [
+            { name: "Light Jacket", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
+            { name: "Comfortable Walking Shoes", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Long Pants", category: "clothing", quantity: 2, is_packed: false, weather_dependent: false },
+            { name: "T-Shirts", category: "clothing", quantity: 3, is_packed: false, weather_dependent: false }
+          ]
+        };
 
-      const response = await InvokeLLM({
-        prompt,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            items: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  name: { type: "string" },
-                  category: { 
-                    type: "string", 
-                    enum: ["clothing", "toiletries", "tech", "gear", "essentials"] 
-                  },
-                  quantity: { type: "number" },
-                  is_packed: { type: "boolean", default: false },
-                  weather_dependent: { type: "boolean", default: false }
-                }
-              }
-            }
-          }
+        // Activity-based suggestions
+        const activityItems = [];
+        if (activities.includes('beach')) {
+          activityItems.push(
+            { name: "Swimsuit", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Beach Towel", category: "essentials", quantity: 1, is_packed: false, weather_dependent: false }
+          );
         }
-      });
+        if (activities.includes('hiking') || activities.includes('camping')) {
+          activityItems.push(
+            { name: "Hiking Boots", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Backpack", category: "gear", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Water Bottle", category: "essentials", quantity: 1, is_packed: false, weather_dependent: false }
+          );
+        }
+        if (activities.includes('business')) {
+          activityItems.push(
+            { name: "Dress Shirt", category: "clothing", quantity: 2, is_packed: false, weather_dependent: false },
+            { name: "Dress Pants", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Dress Shoes", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false }
+          );
+        }
+
+        // Basic essentials
+        const basicItems = [
+          { name: "Phone Charger", category: "tech", quantity: 1, is_packed: false, weather_dependent: false },
+          { name: "Toothbrush", category: "toiletries", quantity: 1, is_packed: false, weather_dependent: false },
+          { name: "Toothpaste", category: "toiletries", quantity: 1, is_packed: false, weather_dependent: false },
+          { name: "Underwear", category: "clothing", quantity: 4, is_packed: false, weather_dependent: false },
+          { name: "Socks", category: "clothing", quantity: 4, is_packed: false, weather_dependent: false }
+        ];
+
+        return {
+          items: [
+            ...(suggestions[weatherType] || suggestions.mild),
+            ...activityItems,
+            ...basicItems
+          ]
+        };
+      };
+
+      const response = generateStaticSuggestions(weatherType, formData.activities, formData.accommodation);
 
       const combinedItems = [
         ...baseItems, 
