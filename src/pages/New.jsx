@@ -735,6 +735,9 @@ export default function NewListPage() {
         if (!accommodation) {
           warnings.push("Accommodation type not specified - using hotel defaults");
         }
+        if (tripDuration > 14) {
+          warnings.push("For trips longer than 2 weeks, pack 7 days worth of underwear and socks, then do laundry every few days");
+        }
 
         // Base clothing quantities based on trip duration
         const getClothingQuantity = (baseQuantity) => {
@@ -744,10 +747,18 @@ export default function NewListPage() {
           return Math.ceil(baseQuantity * 2);
         };
 
+        // Calculate underwear and socks quantities based on trip duration
+        const getUnderwearSocksQuantity = () => {
+          if (tripDuration > 14) {
+            return 7; // For trips > 2 weeks, pack 7 days worth and do laundry
+          }
+          return tripDuration; // For trips ≤ 2 weeks, pack 1 per day
+        };
+
         // Essential items that adjust with trip length
         const essentialItems = [
-          { name: "Underwear", category: "clothing", quantity: getClothingQuantity(Math.min(tripDuration, 7)), is_packed: false, weather_dependent: false },
-          { name: "Socks", category: "clothing", quantity: getClothingQuantity(Math.min(tripDuration, 7)), is_packed: false, weather_dependent: false },
+          { name: "Underwear", category: "clothing", quantity: getUnderwearSocksQuantity(), is_packed: false, weather_dependent: false },
+          { name: "Socks", category: "clothing", quantity: getUnderwearSocksQuantity(), is_packed: false, weather_dependent: false },
           { name: "Phone Charger", category: "tech", quantity: 1, is_packed: false, weather_dependent: false },
           { name: "Toothbrush", category: "toiletries", quantity: 1, is_packed: false, weather_dependent: false },
           { name: "Toothpaste", category: "toiletries", quantity: tripDuration > 7 ? 2 : 1, is_packed: false, weather_dependent: false },
@@ -837,10 +848,7 @@ export default function NewListPage() {
         }
 
         // Check amenities to avoid redundant items
-        if (!formData.amenities.includes('laundry') && tripDuration > 7) {
-          essentialItems.find(item => item.name === "Underwear").quantity += 2;
-          essentialItems.find(item => item.name === "Socks").quantity += 2;
-        }
+        // Note: Underwear and socks quantities are now handled by getUnderwearSocksQuantity()
 
         items = [
           ...essentialItems,
@@ -1361,7 +1369,7 @@ export default function NewListPage() {
                   <div className="p-4 border rounded-lg">
                     <h3 className="font-medium mb-3">Weather-Based Recommendations</h3>
                     <div className="text-sm text-gray-600">
-                      {formData.destinations.some(d => d.weather && d.weather.max_temp < settings.weather_sensitivity.cold_threshold) && (
+                      {formData.destinations.some(d => d.weather && d.weather.max_temp <= settings.weather_sensitivity.cold_threshold) && (
                         <div className="flex items-center gap-2 mb-2">
                           <Thermometer className="text-blue-500 w-4 h-4" />
                           <span>Pack warm clothing for cold weather.</span>
