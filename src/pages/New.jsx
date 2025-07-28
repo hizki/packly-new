@@ -302,36 +302,26 @@ export default function NewListPage() {
       return;
     }
     
-    // Only clean up if we're not already initialized
-    const isAlreadyInitialized = formData.destinations.some((_, index) => {
-      const inputElement = document.getElementById(`destination-${index}`);
-      return inputElement?.getAttribute('data-autocomplete-initialized') === 'true';
-    });
-    
-    if (isAlreadyInitialized) {
-      console.log("Autocomplete already initialized, skipping");
-      return;
-    }
-    
     console.log("Initializing Google Maps and autocomplete");
     
-    // Clean up any existing components first
-    cleanupGoogleMapsComponents();
-    
     try {
-      const map = new window.google.maps.Map(mapRef.current, {
-        center: { lat: 0, lng: 0 },
-        zoom: 2
-      });
-      
-      mapInstance.current = map;
-      
-      try {
-        getUserLocation(map);
-      } catch (error) {
-        console.error("Error getting user location:", error);
+      // Initialize map if not already done
+      if (!mapInstance.current) {
+        const map = new window.google.maps.Map(mapRef.current, {
+          center: { lat: 0, lng: 0 },
+          zoom: 2
+        });
+        
+        mapInstance.current = map;
+        
+        try {
+          getUserLocation(map);
+        } catch (error) {
+          console.error("Error getting user location:", error);
+        }
       }
       
+      const map = mapInstance.current;
       const markers = [];
       
       const lastDestWithCoords = [...formData.destinations].reverse().find(d => d.coordinates);
@@ -341,7 +331,8 @@ export default function NewListPage() {
         map.setZoom(10);
       }
 
-      formData.destinations.forEach((destination, index) => {
+      // Add markers for existing destinations with coordinates
+      formData.destinations.forEach((destination) => {
         if (destination.coordinates && destination.location) {
           const marker = new window.google.maps.Marker({
             position: destination.coordinates,
@@ -351,7 +342,10 @@ export default function NewListPage() {
           
           markers.push(marker);
         }
+      });
 
+      // Initialize autocomplete for each destination input that doesn't have it yet
+      formData.destinations.forEach((destination, index) => {
         const inputElement = document.getElementById(`destination-${index}`);
         if (!inputElement) {
           console.warn(`Input element destination-${index} not found`);
@@ -381,6 +375,7 @@ export default function NewListPage() {
 
             const locationName = place.name || place.formatted_address || inputElement.value;
 
+            // Remove existing marker for this destination
             if (markers[index]) {
               markers[index].setMap(null);
             }
@@ -420,7 +415,6 @@ export default function NewListPage() {
           console.error("Error creating autocomplete for input", index, autocompleteError);
           // Reset the initialization flag on error
           inputElement.removeAttribute('data-autocomplete-initialized');
-          // Don't clean up everything, just this specific input
         }
       });
     } catch (mapError) {
@@ -497,11 +491,24 @@ export default function NewListPage() {
   const handleRemoveDestination = (index) =>  {
     if (formData.destinations.length === 1) return;
     
+    // Clean up the specific autocomplete instance being removed
+    const inputElement = document.getElementById(`destination-${index}`);
+    if (inputElement) {
+      inputElement.removeAttribute('data-autocomplete-initialized');
+    }
+    
+    if (autocompleteRefs.current[index] && window.google?.maps?.event) {
+      window.google.maps.event.clearInstanceListeners(autocompleteRefs.current[index]);
+    }
+    
     const newDestinations = formData.destinations.filter((_, i) => i !== index);
     setFormData(prev => ({
       ...prev,
       destinations: newDestinations
     }));
+    
+    // Clean up autocomplete refs array
+    autocompleteRefs.current = autocompleteRefs.current.filter((_, i) => i !== index);
     
     setTimeout(() => {
       if (window.google) {
