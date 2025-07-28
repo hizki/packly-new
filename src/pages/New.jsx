@@ -155,7 +155,14 @@ export default function NewListPage() {
     try {
       const user = await User.me();
       if (user.settings) {
-        setSettings(user.settings);
+        setSettings(prevSettings => ({
+          ...prevSettings,
+          ...user.settings,
+          weather_sensitivity: {
+            ...prevSettings.weather_sensitivity,
+            ...user.settings.weather_sensitivity
+          }
+        }));
       }
     } catch (error) {
       console.error("Error loading user settings:", error);
