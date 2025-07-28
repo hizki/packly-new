@@ -1,0 +1,31 @@
+/* Google Maps Autocomplete Container Fixes */
+.pac-container {
+  z-index: 1051 !important;
+  font-family: inherit !important;
+}
+
+/* Hide pac-container when it shouldn't be visible */
+.pac-container:empty,
+.pac-container.pac-logo:only-child {
+  display: none !important;
+}
+
+/* Ensure pac-container is properly positioned */
+.pac-container {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+/* Hide floating pac-containers that are detached from inputs */
+body > .pac-container:not(.pac-container-attached) {
+  display: none !important;
+}
+
+/* Additional cleanup for stray pac-containers */
+.pac-container:not(:focus-within):not(:hover) {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}

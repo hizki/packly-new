@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { List } from "@/api/entities";
 import { User } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import { 
-  ArrowLeft, Loader2, Plus, Tag, Trash2, Save
+  ArrowLeft, Loader2, Plus, Tag, Trash2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -46,7 +46,6 @@ export default function ListEditorPage() {
   
   const [newItemName, setNewItemName] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("essentials");
-  const [newItemQuantity, setNewItemQuantity] = useState(1);
   const nameInputRef = useRef(null);
 
   const listTypeDetails = {
@@ -127,6 +126,20 @@ export default function ListEditorPage() {
     }
   }, [editingName]);
 
+  // Escape key navigation
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        navigate(createPageUrl("ListManager"));
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [navigate]);
+
   const loadList = async () => {
     setLoading(true);
     try {
@@ -170,58 +183,57 @@ export default function ListEditorPage() {
     }
   };
 
-  const handleAddItem = () => {
+  const autoSave = async (updatedItems) => {
+    try {
+      if (list?.id) {
+        await List.update(list.id, {
+          items: updatedItems
+        });
+      } else {
+        const newList = await List.create({
+          list_type: listType,
+          category: categoryId,
+          name: listName,
+          items: updatedItems,
+          owner_id: list.owner_id,
+          is_default: false
+        });
+        setList(newList);
+      }
+    } catch (error) {
+      console.error("Error auto-saving list:", error);
+      toast({
+        title: "Auto-save failed",
+        description: "Your changes may not be saved. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddItem = async () => {
     if (!newItemName.trim()) return;
 
     const newItem = {
       name: newItemName,
       category: newItemCategory,
-      quantity: parseInt(newItemQuantity),
+      quantity: 1,
       weather_dependent: false,
       weather_type: "any"
     };
 
-    setItems([...items, newItem]);
+    const updatedItems = [...items, newItem];
+    setItems(updatedItems);
     setNewItemName("");
-    setNewItemQuantity(1);
+    await autoSave(updatedItems);
   };
 
-  const handleRemoveItem = (index) => {
-    setItems(items.filter((_, i) => i !== index));
+  const handleRemoveItem = async (index) => {
+    const updatedItems = items.filter((_, i) => i !== index);
+    setItems(updatedItems);
+    await autoSave(updatedItems);
   };
 
-  const handleSaveList = async () => {
-    try {
-      if (list?.id) {
-        await List.update(list.id, {
-          items: items
-        });
-      } else {
-        await List.create({
-          list_type: listType,
-          category: categoryId,
-          items: items,
-          owner_id: list.owner_id,
-          is_default: false,
-          name: listName
-        });
-      }
 
-      toast({
-        title: "Success",
-        description: "List saved successfully"
-      });
-
-      navigate(createPageUrl("ListManager"));
-    } catch (error) {
-      console.error("Error saving list:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save list",
-        variant: "destructive"
-      });
-    }
-  };
 
   const handleDeleteList = async () => {
     try {
@@ -290,6 +302,12 @@ export default function ListEditorPage() {
         handleNameChange(nameInputRef.current.value);
       }
       setEditingName(false);
+    }
+  };
+
+  const handleItemNameKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleAddItem();
     }
   };
 
@@ -413,6 +431,7 @@ export default function ListEditorPage() {
                 placeholder="Item name"
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={handleItemNameKeyDown}
                 className="flex-1"
               />
               <Select value={newItemCategory} onValueChange={setNewItemCategory}>
@@ -427,16 +446,6 @@ export default function ListEditorPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="number"
-                  min="1"
-                  value={newItemQuantity}
-                  onChange={(e) => setNewItemQuantity(e.target.value)}
-                  className="w-24"
-                />
-                <span className="text-sm text-gray-500">qty</span>
-              </div>
             </div>
             <Button onClick={handleAddItem} className="w-full">
               <Plus className="w-4 h-4 mr-2" />
@@ -488,13 +497,7 @@ export default function ListEditorPage() {
           </CardContent>
         </Card>
 
-        {/* Save button */}
-        <div className="flex justify-end">
-          <Button onClick={handleSaveList} className="bg-blue-600 hover:bg-blue-700">
-            <Save className="w-4 h-4 mr-2" />
-            Save List
-          </Button>
-        </div>
+
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

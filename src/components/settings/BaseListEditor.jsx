@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BaseList } from "@/api/entities";
 import { User } from "@/api/entities";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Save } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 export default function BaseListEditor({ lists, listType, categories, onUpdate }) {
@@ -13,7 +13,6 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
   const [selectedCategory, setSelectedCategory] = useState("");
   const [itemName, setItemName] = useState("");
   const [itemCategory, setItemCategory] = useState("essentials");
-  const [itemQuantity, setItemQuantity] = useState(1);
 
   useEffect(() => {
     if (currentList) {
@@ -33,70 +32,68 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
     }
   };
 
-  const handleAddItem = () => {
-    if (!itemName.trim()) return;
-
-    const newItem = {
-      name: itemName,
-      category: itemCategory,
-      quantity: parseInt(itemQuantity),
-      weather_dependent: false,
-      weather_type: "any"
-    };
-
-    setItems([...items, newItem]);
-    setItemName("");
-    setItemCategory("essentials");
-    setItemQuantity(1);
-  };
-
-  const handleRemoveItem = (index) => {
-    const newItems = [...items];
-    newItems.splice(index, 1);
-    setItems(newItems);
-  };
-
-  const handleSaveList = async () => {
+  const autoSave = async (updatedItems) => {
     try {
       const user = await User.me();
-      if (!selectedCategory) {
-        toast({
-          title: "Error",
-          description: "Please select a category",
-          variant: "destructive"
-        });
-        return;
-      }
+      if (!selectedCategory) return;
 
       if (currentList) {
         await BaseList.update(currentList.id, {
-          items: items
+          items: updatedItems
         });
       } else {
         await BaseList.create({
           list_type: listType,
           category: selectedCategory,
-          items: items,
+          items: updatedItems,
           owner_id: user.id,
-          is_default: false
+          is_sample: false
         });
       }
 
-      toast({
-        title: "Success",
-        description: "Base list saved successfully"
-      });
-
       onUpdate();
     } catch (error) {
-      console.error("Error saving base list:", error);
+      console.error("Error auto-saving base list:", error);
       toast({
-        title: "Error",
-        description: "Failed to save base list",
+        title: "Auto-save failed",
+        description: "Your changes may not be saved. Please try again.",
         variant: "destructive"
       });
     }
   };
+
+  const handleAddItem = async () => {
+    if (!itemName.trim()) return;
+
+    const newItem = {
+      name: itemName,
+      category: itemCategory,
+      quantity: 1,
+      weather_dependent: false,
+      weather_type: "any"
+    };
+
+    const updatedItems = [...items, newItem];
+    setItems(updatedItems);
+    setItemName("");
+    setItemCategory("essentials");
+    await autoSave(updatedItems);
+  };
+
+  const handleItemNameKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleAddItem();
+    }
+  };
+
+  const handleRemoveItem = async (index) => {
+    const updatedItems = [...items];
+    updatedItems.splice(index, 1);
+    setItems(updatedItems);
+    await autoSave(updatedItems);
+  };
+
+
 
   return (
     <div className="space-y-6">
@@ -121,6 +118,7 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
                 placeholder="Item name"
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
+                onKeyDown={handleItemNameKeyDown}
               />
               <Select value={itemCategory} onValueChange={setItemCategory}>
                 <SelectTrigger className="w-32">
@@ -134,13 +132,6 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
                   <SelectItem value="essentials">Essentials</SelectItem>
                 </SelectContent>
               </Select>
-              <Input
-                type="number"
-                min="1"
-                value={itemQuantity}
-                onChange={(e) => setItemQuantity(e.target.value)}
-                className="w-20"
-              />
               <Button onClick={handleAddItem}>
                 <Plus className="w-4 h-4" />
               </Button>
@@ -166,10 +157,7 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
               ))}
             </div>
 
-            <Button onClick={handleSaveList} className="w-full">
-              <Save className="w-4 h-4 mr-2" />
-              Save List
-            </Button>
+
           </>
         )}
       </div>

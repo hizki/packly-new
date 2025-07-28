@@ -91,6 +91,20 @@ export default function ListDetailPage() {
     loadData();
   }, []);
 
+  // Escape key navigation
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        navigate(createPageUrl("Trips"));
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [navigate]);
+
   const loadTipLists = async () => {
     try {
       const user = await User.me();

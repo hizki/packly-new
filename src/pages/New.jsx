@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PackingList } from "@/api/entities";
-import { BaseList } from "@/api/entities";
 import { User } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,19 +25,22 @@ export default function NewListPage() {
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [weatherLoading, setWeatherLoading] = useState({});
-  const [baseLists, setBaseLists] = useState([]);
+
   const [settings, setSettings] = useState({
     weather_sensitivity: { cold_threshold: 15, hot_threshold: 25 }
   });
   const [listName, setListName] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
+  const [missingInfoWarnings, setMissingInfoWarnings] = useState([]);
   
   const [validationErrors, setValidationErrors] = useState({});
 
   const mapRef = useRef(null);
-  const mapsApiKeyRef = useRef("AIzaSyCRQCM884U1JmSt2We2GnBmxVTL347QUv0");
-  const weatherApiKeyRef = useRef("ff088994400f0af3e062f4d57694f901");
+  const mapsApiKeyRef = useRef(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
+  const weatherApiKeyRef = useRef(import.meta.env.VITE_WEATHER_API_KEY);
   const inputRefs = useRef([]);
+  const autocompleteRefs = useRef([]);
+  const mapInstance = useRef(null);
 
   const [formData, setFormData] = useState({
     destinations: [
@@ -60,11 +62,6 @@ export default function NewListPage() {
     amenities: [],
     items: []
   });
-
-  const [nextButtonEnabled, setNextButtonEnabled] = useState(false);
-  const [debugMsg, setDebugMsg] = useState("");
-  const [hasSelectedPlace, setHasSelectedPlace] = useState(false);
-  const [debugDestinations, setDebugDestinations] = useState([]);
 
   const hasValidDestination = formData.destinations.some(d => 
     d.location && d.location.trim().length > 0
@@ -106,6 +103,7 @@ export default function NewListPage() {
     loadUserSettings();
 
     return () => {
+      cleanupGoogleMapsComponents();
       const script = document.getElementById('google-maps-script');
       if (script) {
         script.remove();
@@ -113,42 +111,45 @@ export default function NewListPage() {
     };
   }, []);
 
+  // Escape key navigation
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        navigate(createPageUrl("Home"));
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [navigate]);
+
   useEffect(() => {
     if (step === 1) {
-      initializeGoogleMaps();
+      // Add a small delay to ensure the component is fully mounted
+      const timeoutId = setTimeout(() => {
+        initializeGoogleMaps();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [step]);
 
   useEffect(() => {
     if (step === 1 && mapRef.current && window.google) {
-      formData.destinations.forEach((_, index) => {
-        const inputElement = document.getElementById(`destination-${index}`);
-        if (inputElement) {
-          inputElement.removeAttribute('data-autocomplete-initialized');
-        }
-      });
+      // Only reinitialize if destinations array length changes significantly
+      const timeoutId = setTimeout(() => {
+        initializeMapAndAutocomplete();
+      }, 200);
       
-      initializeMapAndAutocomplete();
+      return () => clearTimeout(timeoutId);
     }
   }, [formData.destinations.length]);
 
-  useEffect(() => {
-    if (step === 1 && mapRef.current && window.google) {
-      const hasNewCoordinates = formData.destinations.some(dest => dest.coordinates);
-      if (hasNewCoordinates) {
-        setTimeout(() => {
-          initializeMapAndAutocomplete();
-        }, 100);
-      }
-    }
-  }, [JSON.stringify(formData.destinations.map(d => d.coordinates))]);
+  // Remove the coordinates-based useEffect as it causes too many re-initializations
 
-  useEffect(() => {
-    const hasValid = formData.destinations.some(d => 
-      d.location && d.location.trim().length > 0
-    );
-    setNextButtonEnabled(hasValid);
-  }, [formData.destinations]);
+
 
   const loadUserSettings = async () => {
     try {
@@ -161,15 +162,38 @@ export default function NewListPage() {
     }
   };
 
-  const loadBaseLists = async () => {
-    try {
-      const user = await User.me();
-      const lists = await BaseList.filter({ owner_id: user.id });
-      setBaseLists(lists);
-    } catch (error) {
-      console.error("Error loading base lists:", error);
+  const cleanupGoogleMapsComponents = () => {
+    // Clear autocomplete instances and their event listeners
+    autocompleteRefs.current.forEach(autocomplete => {
+      if (autocomplete && window.google?.maps?.event) {
+        window.google.maps.event.clearInstanceListeners(autocomplete);
+      }
+    });
+    autocompleteRefs.current = [];
+    
+    // Remove any floating pac-container elements
+    const pacContainers = document.querySelectorAll('.pac-container');
+    pacContainers.forEach(container => {
+      if (container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    });
+    
+    // Reset autocomplete initialization flags
+    formData.destinations.forEach((_, index) => {
+      const inputElement = document.getElementById(`destination-${index}`);
+      if (inputElement) {
+        inputElement.removeAttribute('data-autocomplete-initialized');
+      }
+    });
+    
+    // Clear map instance
+    if (mapInstance.current) {
+      mapInstance.current = null;
     }
   };
+
+
 
   const getUserLocation = (map) => {
     if (!navigator.geolocation) {
@@ -217,13 +241,28 @@ export default function NewListPage() {
   };
 
   const initializeGoogleMaps = () => {
-    if (window.google || document.getElementById('google-maps-script')) {
-      if (window.google) {
-        initializeMapAndAutocomplete();
-      }
+    console.log("Initializing Google Maps...");
+    
+    // Check if API key is available
+    if (!mapsApiKeyRef.current || mapsApiKeyRef.current === 'your_google_maps_api_key') {
+      console.warn("Google Maps API key not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your .env.local file");
+      return;
+    }
+
+    console.log("Google Maps API key found:", mapsApiKeyRef.current.substring(0, 10) + "...");
+
+    if (window.google) {
+      console.log("Google Maps already loaded, initializing autocomplete");
+      initializeMapAndAutocomplete();
+      return;
+    }
+
+    if (document.getElementById('google-maps-script')) {
+      console.log("Google Maps script already exists, waiting for load");
       return;
     }
     
+    console.log("Creating Google Maps script tag");
     const script = document.createElement('script');
     script.id = 'google-maps-script';
     script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsApiKeyRef.current}&libraries=places`;
@@ -231,108 +270,156 @@ export default function NewListPage() {
     script.defer = true;
     
     script.onload = () => {
-      initializeMapAndAutocomplete();
+      console.log("Google Maps script loaded successfully");
+      setTimeout(() => {
+        initializeMapAndAutocomplete();
+      }, 100);
     };
 
     script.onerror = (error) => {
       console.error("Error loading Google Maps:", error);
+      // Remove the failed script so we can try again
+      const failedScript = document.getElementById('google-maps-script');
+      if (failedScript) {
+        failedScript.remove();
+      }
     };
     
     document.body.appendChild(script);
+    console.log("Google Maps script tag added to document");
   };
 
   const initializeMapAndAutocomplete = () => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !window.google) {
+      console.log("Map ref or Google not available yet");
+      return;
+    }
     
-    const map = new window.google.maps.Map(mapRef.current, {
-      center: { lat: 0, lng: 0 },
-      zoom: 2
+    // Only clean up if we're not already initialized
+    const isAlreadyInitialized = formData.destinations.some((_, index) => {
+      const inputElement = document.getElementById(`destination-${index}`);
+      return inputElement?.getAttribute('data-autocomplete-initialized') === 'true';
     });
+    
+    if (isAlreadyInitialized) {
+      console.log("Autocomplete already initialized, skipping");
+      return;
+    }
+    
+    console.log("Initializing Google Maps and autocomplete");
+    
+    // Clean up any existing components first
+    cleanupGoogleMapsComponents();
     
     try {
-      getUserLocation(map);
-    } catch (error) {
-      console.error("Error getting user location:", error);
-    }
-    
-    const markers = [];
-    
-    const lastDestWithCoords = [...formData.destinations].reverse().find(d => d.coordinates);
-    
-    if (lastDestWithCoords) {
-      map.setCenter(lastDestWithCoords.coordinates);
-      map.setZoom(10);
-      setHasSelectedPlace(true);
-    }
-
-    formData.destinations.forEach((destination, index) => {
-      if (destination.coordinates && destination.location) {
-        const marker = new window.google.maps.Marker({
-          position: destination.coordinates,
-          map: map,
-          title: destination.location
-        });
-        
-        markers.push(marker);
-      }
-
-      const inputElement = document.getElementById(`destination-${index}`);
-      if (!inputElement) return;
-
-      const existingAutocomplete = inputElement.getAttribute('data-autocomplete-initialized');
-      if (existingAutocomplete === 'true') {
-        return;
-      }
-
-      const autocomplete = new window.google.maps.places.Autocomplete(inputElement);
-      autocomplete.setFields(['address_components', 'geometry', 'name', 'formatted_address']); 
-      
-      inputElement.setAttribute('data-autocomplete-initialized', 'true');
-
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (!place.geometry) return;
-
-        const locationName = place.name || place.formatted_address || inputElement.value;
-
-        if (markers[index]) {
-          markers[index].setMap(null);
-        }
-        
-        const marker = new window.google.maps.Marker({
-          position: place.geometry.location,
-          map: map,
-          title: locationName
-        });
-        
-        markers[index] = marker;
-
-        const newDestinations = [...formData.destinations];
-        newDestinations[index] = {
-          ...newDestinations[index],
-          location: locationName,
-          coordinates: {
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng()
-          }
-        };
-        
-        setFormData(prev => ({
-          ...prev,
-          destinations: newDestinations
-        }));
-        
-        setHasSelectedPlace(true);
-        
-        map.setCenter(place.geometry.location);
-        map.setZoom(12);
-
-        fetchWeatherForDestination(index, {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng()
-        });
+      const map = new window.google.maps.Map(mapRef.current, {
+        center: { lat: 0, lng: 0 },
+        zoom: 2
       });
-    });
+      
+      mapInstance.current = map;
+      
+      try {
+        getUserLocation(map);
+      } catch (error) {
+        console.error("Error getting user location:", error);
+      }
+      
+      const markers = [];
+      
+      const lastDestWithCoords = [...formData.destinations].reverse().find(d => d.coordinates);
+      
+      if (lastDestWithCoords) {
+        map.setCenter(lastDestWithCoords.coordinates);
+        map.setZoom(10);
+      }
+
+      formData.destinations.forEach((destination, index) => {
+        if (destination.coordinates && destination.location) {
+          const marker = new window.google.maps.Marker({
+            position: destination.coordinates,
+            map: map,
+            title: destination.location
+          });
+          
+          markers.push(marker);
+        }
+
+        const inputElement = document.getElementById(`destination-${index}`);
+        if (!inputElement) {
+          console.warn(`Input element destination-${index} not found`);
+          return;
+        }
+
+        const existingAutocomplete = inputElement.getAttribute('data-autocomplete-initialized');
+        if (existingAutocomplete === 'true') {
+          console.log(`Autocomplete already exists for destination-${index}`);
+          return;
+        }
+
+        try {
+          console.log(`Creating autocomplete for destination-${index}`);
+          const autocomplete = new window.google.maps.places.Autocomplete(inputElement, {
+            types: ['(cities)'],
+            fields: ['address_components', 'geometry', 'name', 'formatted_address']
+          });
+          
+          // Store autocomplete instance for cleanup
+          autocompleteRefs.current[index] = autocomplete;
+          inputElement.setAttribute('data-autocomplete-initialized', 'true');
+
+          autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) return;
+
+            const locationName = place.name || place.formatted_address || inputElement.value;
+
+            if (markers[index]) {
+              markers[index].setMap(null);
+            }
+            
+            const marker = new window.google.maps.Marker({
+              position: place.geometry.location,
+              map: map,
+              title: locationName
+            });
+            
+            markers[index] = marker;
+
+            const newDestinations = [...formData.destinations];
+            newDestinations[index] = {
+              ...newDestinations[index],
+              location: locationName,
+              coordinates: {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+              }
+            };
+            
+            setFormData(prev => ({
+              ...prev,
+              destinations: newDestinations
+            }));
+            
+            map.setCenter(place.geometry.location);
+            map.setZoom(12);
+
+            fetchWeatherForDestination(index, {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng()
+            });
+          });
+        } catch (autocompleteError) {
+          console.error("Error creating autocomplete for input", index, autocompleteError);
+          // Reset the initialization flag on error
+          inputElement.removeAttribute('data-autocomplete-initialized');
+          // Don't clean up everything, just this specific input
+        }
+      });
+    } catch (mapError) {
+      console.error("Error initializing Google Maps:", mapError);
+      cleanupGoogleMapsComponents();
+    }
   };
 
   const fetchWeatherForDestination = async (index, coordinates) => {
@@ -340,7 +427,6 @@ export default function NewListPage() {
 
     setWeatherLoading(prev => ({ ...prev, [index]: true }));
     try {
-      const startDate = formData.destinations[index].start_date;
       const response = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?lat=${coordinates.lat}&lon=${coordinates.lng}&units=metric&appid=${weatherApiKeyRef.current}`
       );
@@ -394,15 +480,11 @@ export default function NewListPage() {
     }));
     
     setTimeout(() => {
-      formData.destinations.forEach((_, index) => {
-        const inputElement = document.getElementById(`destination-${index}`);
-        if (inputElement) {
-          inputElement.removeAttribute('data-autocomplete-initialized');
-        }
-      });
-      
-      initializeMapAndAutocomplete();
-    }, 500);
+      if (window.google) {
+        console.log("Reinitializing autocomplete after adding destination");
+        initializeMapAndAutocomplete();
+      }
+    }, 300);
   };
 
   const handleRemoveDestination = (index) =>  {
@@ -415,15 +497,11 @@ export default function NewListPage() {
     }));
     
     setTimeout(() => {
-      newDestinations.forEach((_, index) => {
-        const inputElement = document.getElementById(`destination-${index}`);
-        if (inputElement) {
-          inputElement.removeAttribute('data-autocomplete-initialized');
-        }
-      });
-      
-      initializeMapAndAutocomplete();
-    }, 500);
+      if (window.google) {
+        console.log("Reinitializing autocomplete after removing destination");
+        initializeMapAndAutocomplete();
+      }
+    }, 300);
   };
 
   const handleDateChange = (index, field, date) => {
@@ -502,50 +580,7 @@ export default function NewListPage() {
     });
   };
 
-  const getItemsFromBaseLists = () => {
-    let items = [];
-    
-    formData.activities.forEach(activity => {
-      const baseList = baseLists.find(l => l.list_type === "activity" && l.category === activity);
-      if (baseList && baseList.items) {
-        items = [...items, ...baseList.items.map(item => ({
-          ...item,
-          is_packed: false
-        }))];
-      }
-    });
-    
-    const accommodationList = baseLists.find(
-      l => l.list_type === "accommodation" && l.category === formData.accommodation
-    );
-    if (accommodationList && accommodationList.items) {
-      items = [...items, ...accommodationList.items.map(item => ({
-        ...item,
-        is_packed: false
-      }))];
-    }
-    
-    formData.companions.forEach(companion => {
-      const baseList = baseLists.find(l => l.list_type === "companion" && l.category === companion);
-      if (baseList && baseList.items) {
-        items = [...items, ...baseList.items.map(item => ({
-          ...item,
-          is_packed: false
-        }))];
-      }
-    });
-    
-    const uniqueItems = [];
-    const itemNames = new Set();
-    items.forEach(item => {
-      if (!itemNames.has(item.name)) {
-        itemNames.add(item.name);
-        uniqueItems.push(item);
-      }
-    });
-    
-    return uniqueItems;
-  };
+
 
   const generateListName = () => {
     const validDestinations = formData.destinations.filter(d => 
@@ -641,7 +676,6 @@ export default function NewListPage() {
   const generatePackingList = async () => {
     setIsProcessing(true);
     try {
-      const baseItems = getItemsFromBaseLists();
       const weatherData = formData.destinations.map(d => d.weather).filter(Boolean);
       const hasWeatherData = weatherData.length > 0;
       
@@ -659,88 +693,163 @@ export default function NewListPage() {
             : "mild"
         : "unknown";
       
-      const destinationsText = formData.destinations
-        .map(d => `${d.location} (${format(d.start_date, "MMM d")} to ${format(d.end_date, "MMM d")})`)
-        .join(", ");
-      
-      // Generate static suggestions based on weather and activities
-      const generateStaticSuggestions = (weatherType, activities, accommodation) => {
-        const suggestions = {
-          cold: [
-            { name: "Thermal Underwear", category: "clothing", quantity: 2, is_packed: false, weather_dependent: true },
+      // Calculate trip duration
+      const calculateTripDuration = () => {
+        let totalDays = 0;
+        formData.destinations.forEach(destination => {
+          const startDate = new Date(destination.start_date);
+          const endDate = new Date(destination.end_date);
+          const durationMs = endDate.getTime() - startDate.getTime();
+          const days = Math.ceil(durationMs / (1000 * 60 * 60 * 24)) + 1;
+          totalDays += days;
+        });
+        return totalDays;
+      };
+
+      // Generate dynamic suggestions based on all parameters
+      const generateDynamicSuggestions = (weatherType, activities, accommodation, tripDuration) => {
+        const warnings = [];
+        let items = [];
+
+        // Check for missing information and add warnings
+        if (weatherType === "unknown") {
+          warnings.push("Weather data unavailable - using general recommendations");
+        }
+        if (!activities || activities.length === 0) {
+          warnings.push("No activities selected - basic items only");
+        }
+        if (!accommodation) {
+          warnings.push("Accommodation type not specified - using hotel defaults");
+        }
+
+        // Base clothing quantities based on trip duration
+        const getClothingQuantity = (baseQuantity) => {
+          if (tripDuration <= 3) return Math.max(1, Math.ceil(baseQuantity * 0.5));
+          if (tripDuration <= 7) return baseQuantity;
+          if (tripDuration <= 14) return Math.ceil(baseQuantity * 1.5);
+          return Math.ceil(baseQuantity * 2);
+        };
+
+        // Essential items that adjust with trip length
+        const essentialItems = [
+          { name: "Underwear", category: "clothing", quantity: getClothingQuantity(Math.min(tripDuration, 7)), is_packed: false, weather_dependent: false },
+          { name: "Socks", category: "clothing", quantity: getClothingQuantity(Math.min(tripDuration, 7)), is_packed: false, weather_dependent: false },
+          { name: "Phone Charger", category: "tech", quantity: 1, is_packed: false, weather_dependent: false },
+          { name: "Toothbrush", category: "toiletries", quantity: 1, is_packed: false, weather_dependent: false },
+          { name: "Toothpaste", category: "toiletries", quantity: tripDuration > 7 ? 2 : 1, is_packed: false, weather_dependent: false },
+        ];
+
+        // Weather-dependent clothing
+        const weatherItems = [];
+        if (weatherType === "cold") {
+          weatherItems.push(
+            { name: "Thermal Underwear", category: "clothing", quantity: getClothingQuantity(2), is_packed: false, weather_dependent: true },
             { name: "Warm Jacket", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
             { name: "Gloves", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
             { name: "Scarf", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
             { name: "Beanie", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
-            { name: "Warm Socks", category: "clothing", quantity: 3, is_packed: false, weather_dependent: true }
-          ],
-          hot: [
-            { name: "Sunscreen", category: "toiletries", quantity: 1, is_packed: false, weather_dependent: true },
+            { name: "Warm Socks", category: "clothing", quantity: getClothingQuantity(3), is_packed: false, weather_dependent: true },
+            { name: "Long Pants", category: "clothing", quantity: getClothingQuantity(3), is_packed: false, weather_dependent: true },
+            { name: "Long Sleeve Shirts", category: "clothing", quantity: getClothingQuantity(3), is_packed: false, weather_dependent: true }
+          );
+        } else if (weatherType === "hot") {
+          weatherItems.push(
+            { name: "Sunscreen", category: "toiletries", quantity: tripDuration > 7 ? 2 : 1, is_packed: false, weather_dependent: true },
             { name: "Sunglasses", category: "essentials", quantity: 1, is_packed: false, weather_dependent: true },
             { name: "Sun Hat", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
             { name: "Sandals", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
-            { name: "Light Shirts", category: "clothing", quantity: 3, is_packed: false, weather_dependent: true },
-            { name: "Shorts", category: "clothing", quantity: 2, is_packed: false, weather_dependent: true }
-          ],
-          mild: [
+            { name: "Light T-Shirts", category: "clothing", quantity: getClothingQuantity(4), is_packed: false, weather_dependent: true },
+            { name: "Shorts", category: "clothing", quantity: getClothingQuantity(3), is_packed: false, weather_dependent: true },
+            { name: "Light Dress/Shirt", category: "clothing", quantity: getClothingQuantity(2), is_packed: false, weather_dependent: true }
+          );
+        } else {
+          // Mild or unknown weather - balanced approach
+          weatherItems.push(
             { name: "Light Jacket", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
-            { name: "Comfortable Walking Shoes", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false },
-            { name: "Long Pants", category: "clothing", quantity: 2, is_packed: false, weather_dependent: false },
-            { name: "T-Shirts", category: "clothing", quantity: 3, is_packed: false, weather_dependent: false }
-          ]
-        };
+            { name: "T-Shirts", category: "clothing", quantity: getClothingQuantity(3), is_packed: false, weather_dependent: false },
+            { name: "Long Pants", category: "clothing", quantity: getClothingQuantity(2), is_packed: false, weather_dependent: false },
+            { name: "Shorts", category: "clothing", quantity: getClothingQuantity(1), is_packed: false, weather_dependent: false },
+            { name: "Comfortable Walking Shoes", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false }
+          );
+        }
 
-        // Activity-based suggestions
+        // Activity-specific items
         const activityItems = [];
         if (activities.includes('beach')) {
           activityItems.push(
-            { name: "Swimsuit", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false },
-            { name: "Beach Towel", category: "essentials", quantity: 1, is_packed: false, weather_dependent: false }
+            { name: "Swimsuit", category: "clothing", quantity: tripDuration > 3 ? 2 : 1, is_packed: false, weather_dependent: false },
+            { name: "Beach Towel", category: "essentials", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Flip Flops", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false }
           );
         }
         if (activities.includes('hiking') || activities.includes('camping')) {
           activityItems.push(
             { name: "Hiking Boots", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false },
             { name: "Backpack", category: "gear", quantity: 1, is_packed: false, weather_dependent: false },
-            { name: "Water Bottle", category: "essentials", quantity: 1, is_packed: false, weather_dependent: false }
+            { name: "Water Bottle", category: "essentials", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Quick-dry Hiking Pants", category: "clothing", quantity: getClothingQuantity(2), is_packed: false, weather_dependent: false }
           );
         }
         if (activities.includes('business')) {
           activityItems.push(
-            { name: "Dress Shirt", category: "clothing", quantity: 2, is_packed: false, weather_dependent: false },
-            { name: "Dress Pants", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false },
-            { name: "Dress Shoes", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false }
+            { name: "Dress Shirt", category: "clothing", quantity: getClothingQuantity(3), is_packed: false, weather_dependent: false },
+            { name: "Dress Pants", category: "clothing", quantity: getClothingQuantity(2), is_packed: false, weather_dependent: false },
+            { name: "Dress Shoes", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Tie", category: "clothing", quantity: getClothingQuantity(2), is_packed: false, weather_dependent: false }
+          );
+        }
+        if (activities.includes('partying')) {
+          activityItems.push(
+            { name: "Nice Outfit", category: "clothing", quantity: getClothingQuantity(2), is_packed: false, weather_dependent: false },
+            { name: "Dressy Shoes", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false }
           );
         }
 
-        // Basic essentials
-        const basicItems = [
-          { name: "Phone Charger", category: "tech", quantity: 1, is_packed: false, weather_dependent: false },
-          { name: "Toothbrush", category: "toiletries", quantity: 1, is_packed: false, weather_dependent: false },
-          { name: "Toothpaste", category: "toiletries", quantity: 1, is_packed: false, weather_dependent: false },
-          { name: "Underwear", category: "clothing", quantity: 4, is_packed: false, weather_dependent: false },
-          { name: "Socks", category: "clothing", quantity: 4, is_packed: false, weather_dependent: false }
+        // Accommodation-specific items
+        const accommodationItems = [];
+        if (accommodation === 'camping' || accommodation === 'glamping') {
+          accommodationItems.push(
+            { name: "Sleeping Bag", category: "gear", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Pillow", category: "gear", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Flashlight", category: "gear", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Toiletries Bag", category: "toiletries", quantity: 1, is_packed: false, weather_dependent: false }
+          );
+        }
+        if (accommodation === 'couch_surfing') {
+          accommodationItems.push(
+            { name: "Sleeping Bag", category: "gear", quantity: 1, is_packed: false, weather_dependent: false },
+            { name: "Travel Pillow", category: "gear", quantity: 1, is_packed: false, weather_dependent: false }
+          );
+        }
+
+        // Check amenities to avoid redundant items
+        if (!formData.amenities.includes('laundry') && tripDuration > 7) {
+          essentialItems.find(item => item.name === "Underwear").quantity += 2;
+          essentialItems.find(item => item.name === "Socks").quantity += 2;
+        }
+
+        items = [
+          ...essentialItems,
+          ...weatherItems,
+          ...activityItems,
+          ...accommodationItems
         ];
 
-        return {
-          items: [
-            ...(suggestions[weatherType] || suggestions.mild),
-            ...activityItems,
-            ...basicItems
-          ]
-        };
+        // Set warnings for missing info
+        setMissingInfoWarnings(warnings);
+
+        return { items, warnings };
       };
 
-      const response = generateStaticSuggestions(weatherType, formData.activities, formData.accommodation);
+      const tripDuration = calculateTripDuration();
 
-      const combinedItems = [
-        ...baseItems, 
-        ...(response.items || [])
-      ];
-      
+      const response = generateDynamicSuggestions(weatherType, formData.activities, formData.accommodation, tripDuration);
+
       const uniqueItems = [];
       const itemNames = new Set();
-      combinedItems.forEach(item => {
+      const allItems = response.items || [];
+      
+      allItems.forEach(item => {
         if (!itemNames.has(item.name)) {
           item.is_packed = false; 
           itemNames.add(item.name);
@@ -760,10 +869,20 @@ export default function NewListPage() {
       setStep(3);
     } catch (error) {
       console.error("Error generating packing list:", error);
+      // Fallback to basic items if generation fails
+      const fallbackItems = [
+        { name: "Underwear", category: "clothing", quantity: 3, is_packed: false, weather_dependent: false },
+        { name: "Socks", category: "clothing", quantity: 3, is_packed: false, weather_dependent: false },
+        { name: "T-Shirts", category: "clothing", quantity: 2, is_packed: false, weather_dependent: false },
+        { name: "Pants", category: "clothing", quantity: 1, is_packed: false, weather_dependent: false },
+        { name: "Phone Charger", category: "tech", quantity: 1, is_packed: false, weather_dependent: false },
+        { name: "Toothbrush", category: "toiletries", quantity: 1, is_packed: false, weather_dependent: false },
+      ];
       setFormData(prev => ({
         ...prev,
-        items: getItemsFromBaseLists().map(item => ({...item, is_packed: false}))
+        items: fallbackItems
       }));
+      setMissingInfoWarnings(["Error generating suggestions - using basic fallback items"]);
       const generatedName = generateListName();
       setListName(generatedName);
       setStep(3);
@@ -1176,6 +1295,16 @@ export default function NewListPage() {
             </CardHeader>
             <CardContent>
               <div className="mb-6 space-y-4">
+                {missingInfoWarnings.length > 0 && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <h3 className="font-medium text-yellow-800 mb-2">Missing Information</h3>
+                    <ul className="text-sm text-yellow-700 space-y-1">
+                      {missingInfoWarnings.map((warning, index) => (
+                        <li key={index}>• {warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="p-4 bg-blue-50 rounded-lg">
                   <h3 className="font-medium mb-1">Trip Summary</h3>
                   <div className="space-y-2">
@@ -1233,7 +1362,7 @@ export default function NewListPage() {
                       {formData.destinations.some(d => d.weather && d.weather.conditions.toLowerCase().includes('rain')) && (
                         <div className="flex items-center gap-2">
                           <CloudRain className="text-blue-500 w-4 h-4" />
-                          <span>Don't forget rain gear!</span>
+                          <span>Don&apos;t forget rain gear!</span>
                         </div>
                       )}
                     </div>

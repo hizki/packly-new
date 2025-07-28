@@ -303,10 +303,88 @@ export class TipListService {
   }
 }
 
+export class CustomListService {
+  static async findMany(filters = {}) {
+    if (isDev) {
+      console.log('🚀 Development mode: Mock custom lists')
+      return []
+    }
+
+    let query = supabase.from('lists').select('*')
+    
+    if (filters.owner_id) {
+      query = query.eq('owner_id', filters.owner_id)
+    }
+    if (filters.list_type) {
+      query = query.eq('list_type', filters.list_type)
+    }
+    if (filters.category) {
+      query = query.eq('category', filters.category)
+    }
+    
+    const { data, error } = await query
+    if (error) throw error
+    return data
+  }
+
+  static async create(data) {
+    if (isDev) {
+      console.log('🚀 Development mode: Mock create custom list', data)
+      return { ...data, id: Date.now().toString() }
+    }
+
+    const { data: result, error } = await supabase
+      .from('lists')
+      .insert([data])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return result
+  }
+
+  static async update(id, data) {
+    if (isDev) {
+      console.log('🚀 Development mode: Mock update custom list', id, data)
+      return { id, ...data }
+    }
+
+    const { data: result, error } = await supabase
+      .from('lists')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return result
+  }
+
+  static async delete(id) {
+    if (isDev) {
+      console.log('🚀 Development mode: Mock delete custom list', id)
+      return { id }
+    }
+
+    const { data, error } = await supabase
+      .from('lists')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    return data
+  }
+
+  static async filter(filters) {
+    return this.findMany(filters)
+  }
+}
+
 // Export aliases for compatibility with existing code
 export const PackingList = PackingListService
 export const BaseList = BaseListService  
 export const TipList = TipListService
-export const List = BaseListService // Some components use 'List' instead of 'BaseList'
+export const CustomList = CustomListService
+export const List = CustomListService // For custom lists (lists table)
 
 export { User } from './auth'

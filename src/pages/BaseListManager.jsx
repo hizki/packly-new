@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BaseList } from "@/api/entities";
 import { User } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import { 
-  ArrowLeft, Loader2, Plus, Tag, Trash2, Save, HelpCircle,
-  Briefcase, Home, Users, Activity
+  ArrowLeft, Loader2, Plus, Tag, Trash2, HelpCircle,
+  Home, Users, Activity
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -28,7 +28,6 @@ export default function ListManagerPage() {
   const [currentItems, setCurrentItems] = useState([]);
   const [newItemName, setNewItemName] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("essentials");
-  const [newItemQuantity, setNewItemQuantity] = useState(1);
 
   // Categories configuration with icons and descriptions
   const listTypes = {
@@ -83,6 +82,20 @@ export default function ListManagerPage() {
     loadLists();
   }, []);
 
+  // Escape key navigation
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        navigate(createPageUrl("Settings"));
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [navigate]);
+
   useEffect(() => {
     if (selectedCategory) {
       const list = baseLists[activeType].find(l => l.category === selectedCategory);
@@ -98,7 +111,7 @@ export default function ListManagerPage() {
       const user = await User.me();
       
       if (!user.has_initialized_base_lists) {
-        await initializeDefaultBaseLists(user.id);
+        await initializeUser();
       }
       
       const lists = await BaseList.filter({ owner_id: user.id });
@@ -120,60 +133,74 @@ export default function ListManagerPage() {
     }
   };
 
-  const handleAddItem = () => {
-    if (!newItemName.trim()) return;
-
-    const newItem = {
-      name: newItemName,
-      category: newItemCategory,
-      quantity: parseInt(newItemQuantity),
-      weather_dependent: false,
-      weather_type: "any"
-    };
-
-    setCurrentItems([...currentItems, newItem]);
-    setNewItemName("");
-    setNewItemQuantity(1);
+  const initializeUser = async () => {
+    try {
+      await User.updateMyUserData({ has_initialized_base_lists: true });
+    } catch (error) {
+      console.error("Error initializing user:", error);
+    }
   };
 
-  const handleRemoveItem = (index) => {
-    setCurrentItems(currentItems.filter((_, i) => i !== index));
-  };
-
-  const handleSaveList = async () => {
+  const autoSave = async (updatedItems) => {
     try {
       const user = await User.me();
       const existingList = baseLists[activeType].find(l => l.category === selectedCategory);
 
       if (existingList) {
         await BaseList.update(existingList.id, {
-          items: currentItems
+          items: updatedItems
         });
       } else {
         await BaseList.create({
           list_type: activeType,
           category: selectedCategory,
-          items: currentItems,
+          items: updatedItems,
           owner_id: user.id,
-          is_default: false
+          is_sample: false
         });
       }
 
-      toast({
-        title: "Success",
-        description: "Base list saved successfully"
-      });
-
       loadLists();
     } catch (error) {
-      console.error("Error saving list:", error);
+      console.error("Error auto-saving base list:", error);
       toast({
-        title: "Error",
-        description: "Failed to save list",
+        title: "Auto-save failed",
+        description: "Your changes may not be saved. Please try again.",
         variant: "destructive"
       });
     }
   };
+
+  const handleAddItem = async () => {
+    if (!newItemName.trim()) return;
+
+    const newItem = {
+      name: newItemName,
+      category: newItemCategory,
+      quantity: 1,
+      weather_dependent: false,
+      weather_type: "any"
+    };
+
+    const updatedItems = [...currentItems, newItem];
+    setCurrentItems(updatedItems);
+    setNewItemName("");
+    await autoSave(updatedItems);
+  };
+
+  const handleItemNameKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleAddItem();
+    }
+  };
+
+  const handleRemoveItem = async (index) => {
+    const updatedItems = currentItems.filter((_, i) => i !== index);
+    setCurrentItems(updatedItems);
+    await autoSave(updatedItems);
+  };
+
+
 
   if (loading) {
     return (
@@ -293,6 +320,7 @@ export default function ListManagerPage() {
                           placeholder="Item name"
                           value={newItemName}
                           onChange={(e) => setNewItemName(e.target.value)}
+                          onKeyDown={handleItemNameKeyDown}
                           className="flex-1"
                         />
                         <Select value={newItemCategory} onValueChange={setNewItemCategory}>
@@ -307,13 +335,6 @@ export default function ListManagerPage() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={newItemQuantity}
-                          onChange={(e) => setNewItemQuantity(e.target.value)}
-                          className="w-24"
-                        />
                         <Button onClick={handleAddItem}>
                           <Plus className="w-4 h-4 mr-2" />
                           Add Item
@@ -359,15 +380,7 @@ export default function ListManagerPage() {
                       )}
                     </div>
 
-                    {/* Save Button */}
-                    {currentItems.length > 0 && (
-                      <div className="flex justify-end">
-                        <Button onClick={handleSaveList} className="bg-blue-600 hover:bg-blue-700">
-                          <Save className="w-4 h-4 mr-2" />
-                          Save List
-                        </Button>
-                      </div>
-                    )}
+
                   </CardContent>
                 </Card>
               )}

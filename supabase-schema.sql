@@ -47,6 +47,7 @@ CREATE TABLE lists (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   list_type TEXT NOT NULL,
   category TEXT,
+  name TEXT,
   items JSONB NOT NULL DEFAULT '[]',
   owner_id UUID REFERENCES auth.users(id),
   is_default BOOLEAN DEFAULT false,

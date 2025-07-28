@@ -8,8 +8,11 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { Bell, Sun, Thermometer, Loader2, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import DeleteAccountDialog from "../components/settings/DeleteAccountDialog";
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const [settings, setSettings] = useState({
     notifications: true,
     weather_sensitivity: {
@@ -42,6 +45,20 @@ export default function SettingsPage() {
   useEffect(() => {
     loadUserData();
   }, []);
+
+  // Escape key navigation
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        navigate(createPageUrl("Home"));
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [navigate]);
 
   const loadUserData = async () => {
     setLoading(true);
