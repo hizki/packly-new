@@ -315,7 +315,13 @@ export default function NewListPage() {
       if (!mapInstance.current) {
         const map = new window.google.maps.Map(mapRef.current, {
           center: { lat: 0, lng: 0 },
-          zoom: 2
+          zoom: 2,
+          mapTypeControl: false,        // Remove map/satellite toggle
+          streetViewControl: false,     // Remove street view yellow person icon
+          rotateControl: false,         // Remove camera rotation controls
+          tiltControl: false,           // Remove camera tilt controls
+          fullscreenControl: true,      // Keep fullscreen control
+          zoomControl: true            // Keep zoom controls
         });
         
         mapInstance.current = map;
@@ -1080,23 +1086,23 @@ export default function NewListPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               {formData.destinations.map((destination, index) => (
-                <div key={index} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium">Destination {index + 1}</h3>
-                    {index > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveDestination(index)}
-                      >
-                        <XCircle className="w-4 h-4 text-red-500" />
-                      </Button>
-                    )}
-                  </div>
+                <div key={index} className="p-4 border rounded-lg relative">
+                  {index > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveDestination(index)}
+                      className="absolute top-2 right-2 h-8 w-8 p-0"
+                    >
+                      <XCircle className="w-4 h-4 text-red-500" />
+                    </Button>
+                  )}
                   
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor={`destination-${index}`}>Location</Label>
+                      <Label htmlFor={`destination-${index}`}>
+                        {formData.destinations.length > 1 ? `Destination ${index + 1}` : 'Destination'}
+                      </Label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                         <Input
@@ -1197,7 +1203,7 @@ export default function NewListPage() {
 
               <div 
                 ref={mapRef} 
-                className="w-full h-64 rounded-lg border" 
+                className="w-full h-52 rounded-lg border" 
               />
 
               <Button
