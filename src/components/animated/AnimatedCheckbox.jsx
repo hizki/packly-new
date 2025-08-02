@@ -28,7 +28,6 @@ const AnimatedCheckbox = ({ checked, onChange, className, disabled = false }) =>
     }
   };
 
-<<<<<<< HEAD
   // Unified pointer events for accessibility and performance
   const handlePointerDown = (e) => {
     if (disabled) return;
@@ -37,23 +36,12 @@ const AnimatedCheckbox = ({ checked, onChange, className, disabled = false }) =>
   };
 
   const handlePointerUp = (e) => {
-=======
-  // Improved mobile touch handling
-  const handleTouchStart = (e) => {
-    if (disabled) return;
-    e.preventDefault(); // Prevent double-firing with onClick
-    setIsPressed(true);
-  };
-
-  const handleTouchEnd = (e) => {
->>>>>>> 62d46b27c007ff7f29e7239bf74291f848c8f9d6
     if (disabled) return;
     e.preventDefault();
     setIsPressed(false);
     handleToggle();
   };
 
-<<<<<<< HEAD
   const handleKeyDown = (e) => {
     if (disabled) return;
     if (e.key === ' ' || e.key === 'Enter') {
@@ -69,16 +57,6 @@ const AnimatedCheckbox = ({ checked, onChange, className, disabled = false }) =>
       setIsPressed(false);
       handleToggle();
     }
-=======
-  const handleMouseDown = () => {
-    if (disabled) return;
-    setIsPressed(true);
-  };
-
-  const handleMouseUp = () => {
-    if (disabled) return;
-    setIsPressed(false);
->>>>>>> 62d46b27c007ff7f29e7239bf74291f848c8f9d6
   };
 
   // Draw animation for checkmark
@@ -109,27 +87,15 @@ const AnimatedCheckbox = ({ checked, onChange, className, disabled = false }) =>
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
       className={cn(
-<<<<<<< HEAD
         "relative w-5 h-5 border-2 rounded-md flex items-center justify-center select-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
-=======
-        "relative w-5 h-5 border-2 rounded-md flex items-center justify-center select-none",
->>>>>>> 62d46b27c007ff7f29e7239bf74291f848c8f9d6
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
         isChecked ? "border-blue-500 bg-blue-500" : "border-gray-300 bg-white",
         className
       )}
-<<<<<<< HEAD
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onKeyDown={handleKeyDown}
       onKeyUp={handleKeyUp}
-=======
-      onClick={handleToggle}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
->>>>>>> 62d46b27c007ff7f29e7239bf74291f848c8f9d6
       whileTap={disabled ? {} : { scale: 0.9 }}
       animate={{ 
         backgroundColor: isChecked ? "#3b82f6" : "#ffffff",
