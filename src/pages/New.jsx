@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CalendarIcon, MapPin, Check, Loader2, Cloud, Thermometer, Sun, CloudRain, XCircle, Plus, Pencil, ArrowRight } from "lucide-react";
+import { CalendarIcon, MapPin, Check, Loader2, Cloud, Thermometer, Sun, CloudRain, XCircle, Plus, Pencil, ArrowRight, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -1129,6 +1129,11 @@ export default function NewListPage() {
     } : null;
   };
 
+  const removeItem = (itemToRemove) => {
+    const newItems = formData.items.filter(item => item !== itemToRemove);
+    setFormData({ ...formData, items: newItems });
+  };
+
   if (isProcessing) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-6">
@@ -1618,30 +1623,27 @@ export default function NewListPage() {
                       <h3 className="font-semibold capitalize mb-2">{category}</h3>
                       <div className="border rounded-lg divide-y">
                         {categoryItems.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3">
-                            <div className="flex items-center gap-2">
-                              <Checkbox 
-                                id={`item-${category}-${idx}`}
-                                checked={item.is_packed}
-                                onCheckedChange={(checked) => {
-                                  const newItems = [...formData.items];
-                                  newItems[formData.items.findIndex(i => i === item)].is_packed = checked;
-                                  setFormData({ ...formData, items: newItems });
-                                }}
-                              />
-                              <Label 
-                                htmlFor={`item-${category}-${idx}`}
-                                className={`cursor-pointer ${item.is_packed ? "line-through text-gray-400" : ""}`}
-                              >
+                          <div key={idx} className="flex items-center justify-between p-3 group">
+                            <div className="flex items-center gap-3">
+                              <span className="font-medium">
                                 {item.name}
                                 {item.weather_dependent && (
                                   <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
                                     Weather
                                   </span>
                                 )}
-                              </Label>
+                              </span>
                             </div>
-                            <span className="text-sm text-gray-500">x{item.quantity}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-500">x{item.quantity}</span>
+                              <button
+                                onClick={() => removeItem(item)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 rounded-full"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
