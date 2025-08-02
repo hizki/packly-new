@@ -75,6 +75,9 @@ export default function ListDetailPage() {
   const [collapsedCategories, setCollapsedCategories] = useState(new Set());
   const categoryCompletionRef = useRef({});
   const tripNameInputRef = useRef(null);
+  
+  // Track pending items to prevent race conditions
+  const [pendingItemIds, setPendingItemIds] = useState(new Set());
 
   useEffect(() => {
     const loadData = async () => {
@@ -116,6 +119,8 @@ export default function ListDetailPage() {
       document.removeEventListener('keydown', handleEscapeKey);
     };
   }, [navigate, editingTripName]);
+
+
 
   const loadTipLists = async () => {
     try {
@@ -188,8 +193,17 @@ export default function ListDetailPage() {
     setCollapsedCategories(initialCollapsed);
   };
 
+  // Improved toggle with proper state management
   const toggleItemPacked = async (itemIndex) => {
     if (!list) return;
+    
+    const itemId = `${list.id}-${itemIndex}`;
+    
+    // Prevent double-clicks on the same item
+    if (pendingItemIds.has(itemId)) return;
+    
+    // Mark item as pending
+    setPendingItemIds(prev => new Set([...prev, itemId]));
     
     const updatedItems = [...list.items];
     const newPackedState = !updatedItems[itemIndex].is_packed;
@@ -199,19 +213,33 @@ export default function ListDetailPage() {
       is_packed: newPackedState
     };
     
-    const updatedList = {
-      ...list,
-      items: updatedItems
-    };
-    
     try {
+      // Update API first, then update UI
       await PackingList.update(list.id, { items: updatedItems });
-      setList(updatedList);
       
-      // Check category completion on every toggle (both check and uncheck)
+      // Only update UI after successful API call
+      setList({
+        ...list,
+        items: updatedItems
+      });
+      
+      // Check category completion after successful update
       checkCategoryCompletion(updatedItems, updatedItems[itemIndex].category);
+      
     } catch (error) {
       console.error("Error updating item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update item",
+        variant: "destructive"
+      });
+    } finally {
+      // Remove item from pending set
+      setPendingItemIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemId);
+        return newSet;
+      });
     }
   };
   
@@ -862,6 +890,7 @@ export default function ListDetailPage() {
                                 onUpdateQuantity={(quantity) => handleUpdateItemQuantity(itemIndex, quantity)}
                                 onDelete={isEditMode ? () => handleRemoveItem(itemIndex) : undefined}
                                 isEditMode={isEditMode}
+                                isPending={pendingItemIds.has(`${list.id}-${itemIndex}`)}
                               />
                             </motion.div>
                           );
