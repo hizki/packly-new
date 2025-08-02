@@ -10,7 +10,8 @@ const AnimatedListItem = ({
   onToggle, 
   onUpdateQuantity, 
   onDelete, 
-  isEditMode = false
+  isEditMode = false,
+  isPending = false
 }) => {
   const [quantity, setQuantity] = useState(item.quantity);
   
@@ -24,10 +25,11 @@ const AnimatedListItem = ({
   };
 
   return (
-    <div className="flex items-center py-2 border-b last:border-b-0">
+    <div className={`flex items-center py-2 border-b last:border-b-0 ${isPending ? 'opacity-60 pointer-events-none' : ''}`}>
       <AnimatedCheckbox 
         checked={item.is_packed} 
         onChange={onToggle}
+        disabled={isPending}
         className="mr-3 flex-shrink-0"
       />
       
