@@ -105,7 +105,7 @@ export default function ReviewStep({
     const rainChanceConfig = {
       slight: { icon: '🌦️' },
       chance: { icon: '🌧️' },
-      certain: { icon: '☔️' },
+      strong: { icon: '☔️' },
     };
 
     if (!rainChance || rainChance === 'none') return null;
@@ -283,7 +283,7 @@ export default function ReviewStep({
                   <div className="flex items-center gap-2">
                     <CloudRain className="text-blue-500 w-4 h-4" />
                     <span>
-                      {destinations.some(d => d.weather && d.weather.rain_chance === 'certain')
+                      {destinations.some(d => d.weather && d.weather.rain_chance === 'strong')
                         ? 'Rain is very likely - pack waterproof gear!'
                         : destinations.some(d => d.weather && d.weather.rain_chance === 'chance')
                           ? 'Good chance of rain - consider bringing rain gear.'

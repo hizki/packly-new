@@ -62,7 +62,7 @@ export function useGoogleMaps({
             if (pop === 0) return 'none';
             if (pop <= 0.3) return 'slight';
             if (pop <= 0.7) return 'chance';
-            return 'certain';
+            return 'strong';
           };
 
           const rainChance = getRainChanceCategory(nextForecast.pop || 0);

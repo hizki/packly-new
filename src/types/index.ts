@@ -31,7 +31,7 @@ export interface Weather {
   conditions: string;
   description?: string;
   precipitation_probability?: number;
-  rain_chance?: 'none' | 'slight' | 'chance' | 'certain';
+  rain_chance?: 'none' | 'slight' | 'chance' | 'strong';
   isApproximate?: boolean;
   source?: string;
   poweredBy?: string;

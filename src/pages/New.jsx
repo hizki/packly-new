@@ -468,6 +468,7 @@ export default function NewListPage() {
                 lng: place.geometry.location.lng(),
               },
               newDestinations[index].start_date,
+              newDestinations[index].end_date,
             );
           });
         } catch (autocompleteError) {
@@ -482,7 +483,9 @@ export default function NewListPage() {
     }
   };
 
-  const fetchWeatherForDestination = async (index, coordinates, startDate = null) => {
+  const fetchWeatherForDestination = async (
+    index, coordinates, startDate = null, endDate = null,
+  ) => {
     if (!coordinates) return;
 
     setWeatherLoading(prev => ({ ...prev, [index]: true }));
@@ -491,6 +494,7 @@ export default function NewListPage() {
         coordinates.lat,
         coordinates.lng,
         startDate || new Date(),
+        endDate,
       );
 
       if (weather) {
@@ -614,6 +618,7 @@ export default function NewListPage() {
         index, 
         newDestinations[index].coordinates, 
         newDestinations[index].start_date,
+        newDestinations[index].end_date,
       );
     }
   };
@@ -1167,15 +1172,15 @@ export default function NewListPage() {
         const hasRainData = weatherData.some(w => w.rain_chance);
         if (hasRainData) {
           const rainChances = weatherData.map(w => w.rain_chance).filter(Boolean);
-          const maxRainChance = rainChances.includes('certain')
-            ? 'certain'
-            : rainChances.includes('chance')
-              ? 'chance'
-              : rainChances.includes('slight')
-                ? 'slight'
-                : 'none';
+              const maxRainChance = rainChances.includes('strong')
+      ? 'strong'
+      : rainChances.includes('chance')
+        ? 'chance'
+        : rainChances.includes('slight')
+          ? 'slight'
+          : 'none';
 
-          if (maxRainChance === 'certain') {
+    if (maxRainChance === 'strong') {
             rainItems.push(
               {
                 name: 'Waterproof Jacket',
@@ -1468,7 +1473,7 @@ export default function NewListPage() {
     const rainChanceConfig = {
       slight: { label: 'Slight Chance', color: 'text-yellow-600', icon: '🌦️' },
       chance: { label: 'Good Chance', color: 'text-orange-600', icon: '🌧️' },
-      certain: { label: 'Certain', color: 'text-red-600', icon: '☔️' },
+      strong: { label: 'Strong chance', color: 'text-red-600', icon: '☔️' },
     };
 
     const config = rainChanceConfig[rainChance];
@@ -2047,7 +2052,7 @@ export default function NewListPage() {
                           <CloudRain className="text-blue-500 w-4 h-4" />
                           <span>
                             {formData.destinations.some(
-                              d => d.weather && d.weather.rain_chance === 'certain',
+                              d => d.weather && d.weather.rain_chance === 'strong',
                             )
                               ? 'Rain is very likely - pack waterproof gear!'
                               : formData.destinations.some(

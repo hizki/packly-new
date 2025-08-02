@@ -23,8 +23,9 @@ const getDaysUntilDate = (targetDate) => {
 
 /**
  * Fetch weather from OpenWeatherMap (0-5 days)
+ * Handles date ranges for multi-day trips
  */
-const fetchOpenWeatherData = async (lat, lng, daysUntil) => {
+const fetchOpenWeatherData = async (lat, lng, daysUntil, startDate, endDate, tripDuration) => {
   const [currentResponse, forecastResponse] = await Promise.all([
     fetch(
       `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=${WEATHER_API_KEYS.openWeather}`,
@@ -41,24 +42,76 @@ const fetchOpenWeatherData = async (lat, lng, daysUntil) => {
     throw new Error('Invalid OpenWeatherMap response');
   }
 
-  // Find relevant forecast based on days until trip
+  // Find relevant forecast for the trip period
   let relevantForecast = forecastData.list[0];
+  let minTemp = forecastData.list[0].main.temp_min;
+  let maxTemp = forecastData.list[0].main.temp_max;
+  let totalPrecipProb = 0;
+  let precipCount = 0;
+  let primaryCondition = forecastData.list[0].weather[0];
+  
   if (daysUntil >= 0 && daysUntil < 5) {
-    const forecastsPerDay = 8; // 8 forecasts per day (3-hour intervals)
-    const targetIndex = Math.min(
-      Math.floor(daysUntil * forecastsPerDay),
-      forecastData.list.length - 1,
-    );
-    relevantForecast = forecastData.list[targetIndex] || forecastData.list[0];
+    const startTime = new Date(startDate).getTime();
+    const endTime = new Date(endDate).getTime();
+    
+    // Collect all forecasts within the trip period
+    const tripForecasts = forecastData.list.filter(forecast => {
+      const forecastTime = forecast.dt * 1000;
+      return forecastTime >= startTime && forecastTime <= endTime + (24 * 60 * 60 * 1000);
+    });
+    
+    if (tripForecasts.length > 0) {
+      // Calculate min/max temps across the trip period
+      minTemp = Math.min(...tripForecasts.map(f => f.main.temp_min));
+      maxTemp = Math.max(...tripForecasts.map(f => f.main.temp_max));
+      
+      // Calculate average precipitation probability
+      totalPrecipProb = tripForecasts.reduce((sum, f) => sum + (f.pop || 0), 0);
+      precipCount = tripForecasts.length;
+      
+      // Use the first forecast for primary conditions, or find most common condition
+      relevantForecast = tripForecasts[0];
+      primaryCondition = tripForecasts[0].weather[0];
+    } else {
+      // Fallback to closest forecast if no exact matches
+      const targetTime = new Date(startDate).getTime();
+      let closestIndex = 0;
+      let smallestDiff = Math.abs(forecastData.list[0].dt * 1000 - targetTime);
+      
+      for (let i = 1; i < forecastData.list.length; i++) {
+        const forecastTime = forecastData.list[i].dt * 1000;
+        const timeDiff = Math.abs(forecastTime - targetTime);
+        
+        if (timeDiff < smallestDiff) {
+          smallestDiff = timeDiff;
+          closestIndex = i;
+        }
+      }
+      
+      relevantForecast = forecastData.list[closestIndex];
+      minTemp = relevantForecast.main.temp_min;
+      maxTemp = relevantForecast.main.temp_max;
+      totalPrecipProb = relevantForecast.pop || 0;
+      precipCount = 1;
+    }
+  }
+  
+  // Calculate final precipitation probability
+  const avgPrecipProb = precipCount > 0 ? totalPrecipProb / precipCount : 0;
+
+  // Create description based on trip duration
+  let description = primaryCondition?.description || currentData.weather[0]?.description;
+  if (tripDuration > 1) {
+    description = `${description} (${tripDuration}-day range)`;
   }
 
   return {
-    min_temp: Math.round(relevantForecast.main.temp_min || currentData.main.temp_min),
-    max_temp: Math.round(relevantForecast.main.temp_max || currentData.main.temp_max),
-    conditions: relevantForecast.weather[0]?.main || currentData.weather[0]?.main || 'Unknown',
-    description: relevantForecast.weather[0]?.description || currentData.weather[0]?.description,
-    precipitation_probability: Math.round((relevantForecast.pop || 0) * 100),
-    rain_chance: getRainChanceCategory(relevantForecast.pop || 0),
+    min_temp: Math.round(minTemp || currentData.main.temp_min),
+    max_temp: Math.round(maxTemp || currentData.main.temp_max),
+    conditions: primaryCondition?.main || currentData.weather[0]?.main || 'Unknown',
+    description,
+    precipitation_probability: Math.round(avgPrecipProb * 100),
+    rain_chance: getRainChanceCategory(avgPrecipProb),
     isApproximate: false,
     source: 'OpenWeatherMap',
     poweredBy: 'Powered by OpenWeatherMap',
@@ -180,31 +233,56 @@ const getRainChanceCategory = (pop) => {
   if (pop === 0) return 'none';
   if (pop <= 0.3) return 'slight';
   if (pop <= 0.7) return 'chance';
-  return 'certain';
+  return 'strong';
 };
 
 /**
  * Main weather fetching function
  * Automatically selects the appropriate API based on forecast timeframe
+ * Handles date ranges for trip planning
  */
-export const fetchWeatherForDate = async (lat, lng, targetDate) => {
+export const fetchWeatherForDate = async (lat, lng, startDate, endDate = null) => {
   try {
-    const daysUntil = getDaysUntilDate(targetDate);
-
-    if (daysUntil < 0) {
+    const tripEndDate = endDate || startDate;
+    
+    const daysUntilStart = getDaysUntilDate(startDate);
+    const daysUntilEnd = getDaysUntilDate(tripEndDate);
+    
+    if (daysUntilStart < 0) {
       // Past date - return null or handle as needed
       return null;
     }
 
-    if (daysUntil <= 5) {
+    // Calculate trip duration in days
+    const tripDuration = Math.ceil(
+      (new Date(tripEndDate) - new Date(startDate)) / (1000 * 60 * 60 * 24),
+    ) + 1;
+    
+    if (daysUntilEnd <= 5) {
       // Use OpenWeatherMap for near-term forecasts
-      return await fetchOpenWeatherData(lat, lng, daysUntil);
-    } else if (daysUntil <= 14) {
-      // Use WeatherAPI for medium-term forecasts
-      return await fetchWeatherApiData(lat, lng, targetDate);
+      return await fetchOpenWeatherData(
+        lat, lng, daysUntilStart, startDate, tripEndDate, tripDuration,
+      );
+    } else if (daysUntilEnd <= 14) {
+      // Use WeatherAPI for medium-term forecasts - use middle of trip for single forecast
+      const middleDate = new Date(
+        startDate.getTime() + (tripEndDate.getTime() - startDate.getTime()) / 2,
+      );
+      const result = await fetchWeatherApiData(lat, lng, middleDate);
+      if (result && tripDuration > 1) {
+        result.description = `${result.description} (${tripDuration}-day average)`;
+      }
+      return result;
     } else {
-      // Use climate averages for long-term approximations
-      return await fetchClimateAverages(lat, lng, targetDate);
+      // Use climate averages for long-term approximations - use middle of trip
+      const middleDate = new Date(
+        startDate.getTime() + (tripEndDate.getTime() - startDate.getTime()) / 2,
+      );
+      const result = await fetchClimateAverages(lat, lng, middleDate);
+      if (result && tripDuration > 1) {
+        result.description = `${result.description} (${tripDuration}-day estimate)`;
+      }
+      return result;
     }
   } catch (error) {
     console.error('Error fetching weather data:', error);
