@@ -108,8 +108,8 @@ export default function ListManagerPage() {
 
   const initializeUser = async userId => {
     try {
-      // Mark user as initialized
-      await User.updateMyUserData({ has_initialized_base_lists: true });
+      const { ListInitializationService } = await import('@/api/listInitializationService');
+      await ListInitializationService.initializeUserLists(userId);
     } catch (error) {
       console.error('Error initializing default lists:', error);
     }

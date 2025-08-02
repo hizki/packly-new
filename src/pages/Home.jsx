@@ -53,7 +53,8 @@ export default function HomePage() {
 
   const initializeUser = async userId => {
     try {
-      await withRetry(() => User.updateMyUserData({ has_initialized_base_lists: true }));
+      const { ListInitializationService } = await import('@/api/listInitializationService');
+      await ListInitializationService.initializeUserLists(userId);
     } catch (error) {
       console.error('Error initializing user:', error);
       toast({

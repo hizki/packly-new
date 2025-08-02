@@ -8,27 +8,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { GripVertical, Plus, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
-const DEFAULT_DAY_BEFORE_TIPS = [
-  'Check flight/travel times',
-  'Charge all electronic devices',
-  'Download offline maps and entertainment',
-  'Set out-of-office email response',
-  'Check weather forecast',
-  'Empty fridge of perishables',
-  'Do laundry if needed',
-  'Prepare documents and tickets',
-];
-
-const DEFAULT_BEFORE_LEAVING_TIPS = [
-  'Check all windows are closed',
-  'Unplug non-essential appliances',
-  'Adjust thermostat',
-  'Lock all doors',
-  'Take out trash',
-  'Check you have your passport/ID',
-  'Check you have your wallet/money',
-  'Turn off water main if needed',
-];
+// Default tips are now managed by ListInitializationService
 
 export default function TipListManager() {
   const [dayBeforeTips, setDayBeforeTips] = useState([]);
@@ -48,11 +28,9 @@ export default function TipListManager() {
       const dayBefore = lists.find(list => list.list_type === 'day_before');
       const beforeLeaving = lists.find(list => list.list_type === 'before_leaving');
 
-      if (!dayBefore) {
-        await initializeDefaultList('day_before', DEFAULT_DAY_BEFORE_TIPS);
-      }
-      if (!beforeLeaving) {
-        await initializeDefaultList('before_leaving', DEFAULT_BEFORE_LEAVING_TIPS);
+      // Default tips are now handled by ListInitializationService during user setup
+      if (!dayBefore || !beforeLeaving) {
+        console.log('Missing tip lists detected, they should have been initialized during user setup');
       }
 
       const updatedLists = await TipList.filter({ owner_id: currentUser.id });
@@ -72,19 +50,7 @@ export default function TipListManager() {
     }
   };
 
-  const initializeDefaultList = async (listType, defaultTips) => {
-    const currentUser = await User.me();
-    await TipList.create({
-      list_type: listType,
-      owner_id: currentUser.id,
-      tips: defaultTips.map((content, index) => ({
-        id: `${listType}_${index}`,
-        content,
-        is_default: true,
-        order: index,
-      })),
-    });
-  };
+  // Tip list initialization is now handled by ListInitializationService
 
   const handleDragEnd = async (result, listType) => {
     if (!result.destination) return;

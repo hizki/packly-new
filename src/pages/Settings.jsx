@@ -97,6 +97,43 @@ export default function SettingsPage() {
     }
   };
 
+  const handleResetLists = async () => {
+    try {
+      const confirmed = window.confirm(
+        'Are you sure you want to reset all your lists to defaults? This action cannot be undone.',
+      );
+      
+      if (!confirmed) return;
+
+      setLoading(true);
+
+      const { ListInitializationService } = await import('@/api/listInitializationService');
+      const user = await User.me();
+      
+      await ListInitializationService.resetUserListsToDefaults(user.id);
+      
+      toast({
+        title: 'Lists reset successfully',
+        description: 'All your lists have been restored to default recommendations. Navigate to Lists to see the changes.',
+      });
+
+      // Navigate to lists page to show the refreshed data
+      setTimeout(() => {
+        navigate(createPageUrl('ListManager'));
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error resetting lists:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reset lists. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await User.logout();
@@ -232,6 +269,37 @@ export default function SettingsPage() {
             <p className="text-sm text-gray-500 mt-2">
               Show fewer suggestions and simpler interface
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Data Management</CardTitle>
+            <CardDescription>
+              Reset your lists to default recommendations
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-medium text-amber-800 mb-2">Reset Lists to Defaults</h4>
+                             <p className="text-sm text-amber-700 mb-4">
+                 This will restore all your activity, accommodation, companion, and tip lists to 
+                 the original recommended items. Any custom modifications will be lost.
+               </p>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={handleResetLists}
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Sun className="w-4 h-4 mr-2" />
+                )}
+                Reset Lists to Defaults
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
