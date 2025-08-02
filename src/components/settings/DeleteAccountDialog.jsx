@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +21,7 @@ export default function DeleteAccountDialog({ open, onOpenChange }) {
   const [confirmation, setConfirmation] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const deleteAllUserData = async (userId) => {
+  const deleteAllUserData = async userId => {
     try {
       // Delete all packing lists
       const packingLists = await PackingList.filter({ owner_id: userId });
@@ -39,7 +46,6 @@ export default function DeleteAccountDialog({ open, onOpenChange }) {
         has_initialized_base_lists: false,
         // Add any other user-specific data fields that need to be reset
       });
-
     } catch (error) {
       console.error('Error deleting user data:', error);
       throw new Error('Failed to delete all user data');
@@ -49,9 +55,9 @@ export default function DeleteAccountDialog({ open, onOpenChange }) {
   const handleDelete = async () => {
     if (confirmation.toLowerCase() !== 'delete my account') {
       toast({
-        title: "Error",
-        description: "Please type the confirmation text exactly as shown",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Please type the confirmation text exactly as shown',
+        variant: 'destructive',
       });
       return;
     }
@@ -59,18 +65,18 @@ export default function DeleteAccountDialog({ open, onOpenChange }) {
     setIsDeleting(true);
     try {
       const currentUser = await User.me();
-      
+
       // First delete all user data
       await deleteAllUserData(currentUser.id);
 
       // Then logout the user
       await User.logout();
-      
+
       toast({
-        title: "Account Data Deleted",
+        title: 'Account Data Deleted',
         description: "Your account data has been deleted and you've been logged out.",
       });
-      
+
       // Redirect to home page after a short delay
       setTimeout(() => {
         window.location.href = '/';
@@ -78,16 +84,19 @@ export default function DeleteAccountDialog({ open, onOpenChange }) {
     } catch (error) {
       console.error('Error during account deletion:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete account data. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to delete account data. Please try again.',
+        variant: 'destructive',
       });
       setIsDeleting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+    >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-red-600">
@@ -95,7 +104,8 @@ export default function DeleteAccountDialog({ open, onOpenChange }) {
             Delete Account Data
           </DialogTitle>
           <DialogDescription className="text-base">
-            This action cannot be undone. This will permanently delete all your data from our servers.
+            This action cannot be undone. This will permanently delete all your data from our
+            servers.
           </DialogDescription>
         </DialogHeader>
 
@@ -117,7 +127,7 @@ export default function DeleteAccountDialog({ open, onOpenChange }) {
             <Input
               id="confirm"
               value={confirmation}
-              onChange={(e) => setConfirmation(e.target.value)}
+              onChange={e => setConfirmation(e.target.value)}
               placeholder="delete my account"
               className="w-full"
             />

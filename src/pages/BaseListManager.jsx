@@ -1,81 +1,93 @@
-
-import { useState, useEffect } from "react";
-import { BaseList } from "@/api/entities";
-import { User } from "@/api/entities";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
-import { 
-  ArrowLeft, Loader2, Plus, Tag, Trash2, HelpCircle,
-  Home, Users, Activity
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useState, useEffect } from 'react';
+import { BaseList } from '@/api/entities';
+import { User } from '@/api/entities';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from '@/components/ui/use-toast';
+import {
+  ArrowLeft,
+  Loader2,
+  Plus,
+  Tag,
+  Trash2,
+  HelpCircle,
+  Home,
+  Users,
+  Activity,
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 export default function ListManagerPage() {
   const navigate = useNavigate();
-  const [activeType, setActiveType] = useState("activity");
+  const [activeType, setActiveType] = useState('activity');
   const [baseLists, setBaseLists] = useState({
     activity: [],
     accommodation: [],
-    companion: []
+    companion: [],
   });
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [currentItems, setCurrentItems] = useState([]);
-  const [newItemName, setNewItemName] = useState("");
-  const [newItemCategory, setNewItemCategory] = useState("essentials");
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('essentials');
 
   // Categories configuration with icons and descriptions
   const listTypes = {
     activity: {
-      name: "Activities",
-      description: "Items needed for specific activities",
+      name: 'Activities',
+      description: 'Items needed for specific activities',
       icon: <Activity className="w-5 h-5" />,
       categories: [
-        { id: "beach", label: "Beach Trip", icon: "🏖️" },
-        { id: "camping", label: "Camping", icon: "🏕️" },
-        { id: "climbing", label: "Climbing", icon: "🧗" },
-        { id: "hiking", label: "Hiking", icon: "🥾" },
-        { id: "partying", label: "Party", icon: "🎉" },
-        { id: "business", label: "Business", icon: "💼" },
-        { id: "sightseeing", label: "Sightseeing", icon: "🏛️" }
-      ]
+        { id: 'beach', label: 'Beach Trip', icon: '🏖️' },
+        { id: 'camping', label: 'Camping', icon: '🏕️' },
+        { id: 'climbing', label: 'Climbing', icon: '🧗' },
+        { id: 'hiking', label: 'Hiking', icon: '🥾' },
+        { id: 'partying', label: 'Party', icon: '🎉' },
+        { id: 'business', label: 'Business', icon: '💼' },
+        { id: 'sightseeing', label: 'Sightseeing', icon: '🏛️' },
+      ],
     },
     accommodation: {
-      name: "Accommodation",
+      name: 'Accommodation',
       description: "Items based on where you're staying",
       icon: <Home className="w-5 h-5" />,
       categories: [
-        { id: "hotel", label: "Hotel", icon: "🏨" },
-        { id: "camping", label: "Camping", icon: "🏕️" },
-        { id: "glamping", label: "Glamping", icon: "⛺" },
-        { id: "couch_surfing", label: "Couch Surfing", icon: "🛋️" },
-        { id: "airbnb", label: "Airbnb", icon: "🏠" }
-      ]
+        { id: 'hotel', label: 'Hotel', icon: '🏨' },
+        { id: 'camping', label: 'Camping', icon: '🏕️' },
+        { id: 'glamping', label: 'Glamping', icon: '⛺' },
+        { id: 'couch_surfing', label: 'Couch Surfing', icon: '🛋️' },
+        { id: 'airbnb', label: 'Airbnb', icon: '🏠' },
+      ],
     },
     companion: {
-      name: "Travel Companions",
+      name: 'Travel Companions',
       description: "Items depending on who you're traveling with",
       icon: <Users className="w-5 h-5" />,
       categories: [
-        { id: "alone", label: "Solo Travel", icon: "🧍" },
-        { id: "spouse", label: "With Partner", icon: "💑" },
-        { id: "friends", label: "With Friends", icon: "👥" },
-        { id: "family", label: "With Family", icon: "👨‍👩‍👧" }
-      ]
-    }
+        { id: 'alone', label: 'Solo Travel', icon: '🧍' },
+        { id: 'spouse', label: 'With Partner', icon: '💑' },
+        { id: 'friends', label: 'With Friends', icon: '👥' },
+        { id: 'family', label: 'With Family', icon: '👨‍👩‍👧' },
+      ],
+    },
   };
 
   const itemCategories = [
-    { value: "clothing", label: "Clothing" },
-    { value: "toiletries", label: "Toiletries" },
-    { value: "tech", label: "Tech" },
-    { value: "gear", label: "Gear" },
-    { value: "essentials", label: "Essentials" }
+    { value: 'clothing', label: 'Clothing' },
+    { value: 'toiletries', label: 'Toiletries' },
+    { value: 'tech', label: 'Tech' },
+    { value: 'gear', label: 'Gear' },
+    { value: 'essentials', label: 'Essentials' },
   ];
 
   useEffect(() => {
@@ -84,9 +96,9 @@ export default function ListManagerPage() {
 
   // Escape key navigation
   useEffect(() => {
-    const handleEscapeKey = (event) => {
+    const handleEscapeKey = event => {
       if (event.key === 'Escape') {
-        navigate(createPageUrl("Settings"));
+        navigate(createPageUrl('Settings'));
       }
     };
 
@@ -109,24 +121,24 @@ export default function ListManagerPage() {
     setLoading(true);
     try {
       const user = await User.me();
-      
+
       if (!user.has_initialized_base_lists) {
         await initializeUser();
       }
-      
+
       const lists = await BaseList.filter({ owner_id: user.id });
-      
+
       setBaseLists({
         activity: lists.filter(l => l.list_type === 'activity'),
         accommodation: lists.filter(l => l.list_type === 'accommodation'),
-        companion: lists.filter(l => l.list_type === 'companion')
+        companion: lists.filter(l => l.list_type === 'companion'),
       });
     } catch (error) {
-      console.error("Error loading base lists:", error);
+      console.error('Error loading base lists:', error);
       toast({
-        title: "Error",
-        description: "Failed to load base lists",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to load base lists',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -137,18 +149,18 @@ export default function ListManagerPage() {
     try {
       await User.updateMyUserData({ has_initialized_base_lists: true });
     } catch (error) {
-      console.error("Error initializing user:", error);
+      console.error('Error initializing user:', error);
     }
   };
 
-  const autoSave = async (updatedItems) => {
+  const autoSave = async updatedItems => {
     try {
       const user = await User.me();
       const existingList = baseLists[activeType].find(l => l.category === selectedCategory);
 
       if (existingList) {
         await BaseList.update(existingList.id, {
-          items: updatedItems
+          items: updatedItems,
         });
       } else {
         await BaseList.create({
@@ -156,17 +168,17 @@ export default function ListManagerPage() {
           category: selectedCategory,
           items: updatedItems,
           owner_id: user.id,
-          is_sample: false
+          is_sample: false,
         });
       }
 
       loadLists();
     } catch (error) {
-      console.error("Error auto-saving base list:", error);
+      console.error('Error auto-saving base list:', error);
       toast({
-        title: "Auto-save failed",
-        description: "Your changes may not be saved. Please try again.",
-        variant: "destructive"
+        title: 'Auto-save failed',
+        description: 'Your changes may not be saved. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -179,28 +191,26 @@ export default function ListManagerPage() {
       category: newItemCategory,
       quantity: 1,
       weather_dependent: false,
-      weather_type: "any"
+      weather_type: 'any',
     };
 
     const updatedItems = [...currentItems, newItem];
     setCurrentItems(updatedItems);
-    setNewItemName("");
+    setNewItemName('');
     await autoSave(updatedItems);
   };
 
-  const handleItemNameKeyDown = (e) => {
+  const handleItemNameKeyDown = e => {
     if (e.key === 'Enter') {
       handleAddItem();
     }
   };
 
-  const handleRemoveItem = async (index) => {
+  const handleRemoveItem = async index => {
     const updatedItems = currentItems.filter((_, i) => i !== index);
     setCurrentItems(updatedItems);
     await autoSave(updatedItems);
   };
-
-
 
   if (loading) {
     return (
@@ -219,9 +229,9 @@ export default function ListManagerPage() {
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate(createPageUrl("Settings"))}
+            <Button
+              variant="ghost"
+              onClick={() => navigate(createPageUrl('Settings'))}
               className="p-2"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -243,26 +253,40 @@ export default function ListManagerPage() {
               <div className="text-sm text-blue-900">
                 <p className="font-medium mb-1">About Packing Lists</p>
                 <p className="text-blue-800">
-                  These lists are templates that automatically populate your trips based on your trip details.
+                  These lists are templates that automatically populate your trips based on your
+                  trip details.
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Main Tabs Interface */}
-        <Tabs value={activeType} onValueChange={setActiveType} className="space-y-6">
+        <Tabs
+          value={activeType}
+          onValueChange={setActiveType}
+          className="space-y-6"
+        >
           <div className="bg-white rounded-lg border p-1">
             <TabsList className="grid grid-cols-3 w-full">
-              <TabsTrigger value="activity" className="py-3">
+              <TabsTrigger
+                value="activity"
+                className="py-3"
+              >
                 <Activity className="w-4 h-4 mr-2" />
                 Activities
               </TabsTrigger>
-              <TabsTrigger value="accommodation" className="py-3">
+              <TabsTrigger
+                value="accommodation"
+                className="py-3"
+              >
                 <Home className="w-4 h-4 mr-2" />
                 Accommodation
               </TabsTrigger>
-              <TabsTrigger value="companion" className="py-3">
+              <TabsTrigger
+                value="companion"
+                className="py-3"
+              >
                 <Users className="w-4 h-4 mr-2" />
                 Companions
               </TabsTrigger>
@@ -270,7 +294,11 @@ export default function ListManagerPage() {
           </div>
 
           {Object.entries(listTypes).map(([type, config]) => (
-            <TabsContent key={type} value={type} className="space-y-6">
+            <TabsContent
+              key={type}
+              value={type}
+              className="space-y-6"
+            >
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -286,14 +314,14 @@ export default function ListManagerPage() {
                       Select {config.name.toLowerCase()} type
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {config.categories.map((category) => (
+                      {config.categories.map(category => (
                         <button
                           key={category.id}
                           onClick={() => setSelectedCategory(category.id)}
                           className={`p-4 rounded-lg border text-left transition-all ${
-                            selectedCategory === category.id 
-                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500 ring-opacity-50" 
-                              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            selectedCategory === category.id
+                              ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500 ring-opacity-50'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                           }`}
                         >
                           <span className="text-2xl mb-2 block">{category.icon}</span>
@@ -319,17 +347,23 @@ export default function ListManagerPage() {
                         <Input
                           placeholder="Item name"
                           value={newItemName}
-                          onChange={(e) => setNewItemName(e.target.value)}
+                          onChange={e => setNewItemName(e.target.value)}
                           onKeyDown={handleItemNameKeyDown}
                           className="flex-1"
                         />
-                        <Select value={newItemCategory} onValueChange={setNewItemCategory}>
+                        <Select
+                          value={newItemCategory}
+                          onValueChange={setNewItemCategory}
+                        >
                           <SelectTrigger className="w-40">
                             <SelectValue placeholder="Category" />
                           </SelectTrigger>
                           <SelectContent>
                             {itemCategories.map(cat => (
-                              <SelectItem key={cat.value} value={cat.value}>
+                              <SelectItem
+                                key={cat.value}
+                                value={cat.value}
+                              >
                                 {cat.label}
                               </SelectItem>
                             ))}
@@ -357,9 +391,7 @@ export default function ListManagerPage() {
                                 <span className="text-sm text-gray-500">
                                   {itemCategories.find(cat => cat.value === item.category)?.label}
                                 </span>
-                                <span className="text-sm text-gray-500">
-                                  × {item.quantity}
-                                </span>
+                                <span className="text-sm text-gray-500">× {item.quantity}</span>
                               </div>
                             </div>
                           </div>
@@ -379,8 +411,6 @@ export default function ListManagerPage() {
                         </div>
                       )}
                     </div>
-
-
                   </CardContent>
                 </Card>
               )}

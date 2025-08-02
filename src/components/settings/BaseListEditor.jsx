@@ -1,18 +1,24 @@
-import { useState, useEffect } from "react";
-import { BaseList } from "@/api/entities";
-import { User } from "@/api/entities";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { useState, useEffect } from 'react';
+import { BaseList } from '@/api/entities';
+import { User } from '@/api/entities';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Plus, Trash2 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 export default function BaseListEditor({ lists, listType, categories, onUpdate }) {
   const [currentList, setCurrentList] = useState(null);
   const [items, setItems] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [itemName, setItemName] = useState("");
-  const [itemCategory, setItemCategory] = useState("essentials");
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [itemName, setItemName] = useState('');
+  const [itemCategory, setItemCategory] = useState('essentials');
 
   useEffect(() => {
     if (currentList) {
@@ -20,7 +26,7 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
     }
   }, [currentList]);
 
-  const handleCategorySelect = async (category) => {
+  const handleCategorySelect = async category => {
     setSelectedCategory(category);
     const existingList = lists.find(l => l.category === category);
     if (existingList) {
@@ -32,14 +38,14 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
     }
   };
 
-  const autoSave = async (updatedItems) => {
+  const autoSave = async updatedItems => {
     try {
       const user = await User.me();
       if (!selectedCategory) return;
 
       if (currentList) {
         await BaseList.update(currentList.id, {
-          items: updatedItems
+          items: updatedItems,
         });
       } else {
         await BaseList.create({
@@ -47,17 +53,17 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
           category: selectedCategory,
           items: updatedItems,
           owner_id: user.id,
-          is_sample: false
+          is_sample: false,
         });
       }
 
       onUpdate();
     } catch (error) {
-      console.error("Error auto-saving base list:", error);
+      console.error('Error auto-saving base list:', error);
       toast({
-        title: "Auto-save failed",
-        description: "Your changes may not be saved. Please try again.",
-        variant: "destructive"
+        title: 'Auto-save failed',
+        description: 'Your changes may not be saved. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -70,41 +76,45 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
       category: itemCategory,
       quantity: 1,
       weather_dependent: false,
-      weather_type: "any"
+      weather_type: 'any',
     };
 
     const updatedItems = [...items, newItem];
     setItems(updatedItems);
-    setItemName("");
-    setItemCategory("essentials");
+    setItemName('');
+    setItemCategory('essentials');
     await autoSave(updatedItems);
   };
 
-  const handleItemNameKeyDown = (e) => {
+  const handleItemNameKeyDown = e => {
     if (e.key === 'Enter') {
       handleAddItem();
     }
   };
 
-  const handleRemoveItem = async (index) => {
+  const handleRemoveItem = async index => {
     const updatedItems = [...items];
     updatedItems.splice(index, 1);
     setItems(updatedItems);
     await autoSave(updatedItems);
   };
 
-
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
-        <Select value={selectedCategory} onValueChange={handleCategorySelect}>
+        <Select
+          value={selectedCategory}
+          onValueChange={handleCategorySelect}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
           <SelectContent>
             {categories.map(category => (
-              <SelectItem key={category} value={category}>
+              <SelectItem
+                key={category}
+                value={category}
+              >
                 {category.replace(/_/g, ' ')}
               </SelectItem>
             ))}
@@ -117,10 +127,13 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
               <Input
                 placeholder="Item name"
                 value={itemName}
-                onChange={(e) => setItemName(e.target.value)}
+                onChange={e => setItemName(e.target.value)}
                 onKeyDown={handleItemNameKeyDown}
               />
-              <Select value={itemCategory} onValueChange={setItemCategory}>
+              <Select
+                value={itemCategory}
+                onValueChange={setItemCategory}
+              >
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
@@ -139,7 +152,10 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
 
             <div className="space-y-2">
               {items.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                >
                   <div>
                     <span className="font-medium">{item.name}</span>
                     <span className="text-sm text-gray-500 ml-2">
@@ -156,8 +172,6 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
                 </div>
               ))}
             </div>
-
-
           </>
         )}
       </div>

@@ -3,10 +3,4 @@
 
 export const Integrations = {
   // Add future integrations here as needed
-}
-
-
-
-
-
-
+};

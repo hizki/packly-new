@@ -1,24 +1,20 @@
-
-import React, { useState, useEffect } from "react";
-import { List } from "@/api/entities";
-import { User } from "@/api/entities";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
-import { 
-  Loader2, Plus, Edit,
-  Activity, Home, Users
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { withRetry } from "../components/utils/api-helpers";
-import CustomListForm from "../components/lists/CustomListForm";
+import React, { useState, useEffect } from 'react';
+import { List } from '@/api/entities';
+import { User } from '@/api/entities';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
+import { Loader2, Plus, Edit, Activity, Home, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { withRetry } from '../components/utils/api-helpers';
+import CustomListForm from '../components/lists/CustomListForm';
 
 export default function ListManagerPage() {
   const navigate = useNavigate();
   const [lists, setLists] = useState({
     activity: [],
     accommodation: [],
-    companion: []
+    companion: [],
   });
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(null); // activity, accommodation, companion, or null
@@ -26,42 +22,42 @@ export default function ListManagerPage() {
   // Categories configuration with icons and descriptions
   const listTypes = {
     activity: {
-      name: "Activities",
-      description: "Items needed for specific activities",
+      name: 'Activities',
+      description: 'Items needed for specific activities',
       icon: <Activity className="w-5 h-5" />,
       categories: [
-        { id: "beach", label: "Beach Trip", icon: "🏖️" },
-        { id: "camping", label: "Camping", icon: "🏕️" },
-        { id: "climbing", label: "Climbing", icon: "🧗" },
-        { id: "hiking", label: "Hiking", icon: "🥾" },
-        { id: "partying", label: "Party", icon: "🎉" },
-        { id: "business", label: "Business", icon: "💼" },
-        { id: "sightseeing", label: "Sightseeing", icon: "🏛️" }
-      ]
+        { id: 'beach', label: 'Beach Trip', icon: '🏖️' },
+        { id: 'camping', label: 'Camping', icon: '🏕️' },
+        { id: 'climbing', label: 'Climbing', icon: '🧗' },
+        { id: 'hiking', label: 'Hiking', icon: '🥾' },
+        { id: 'partying', label: 'Party', icon: '🎉' },
+        { id: 'business', label: 'Business', icon: '💼' },
+        { id: 'sightseeing', label: 'Sightseeing', icon: '🏛️' },
+      ],
     },
     accommodation: {
-      name: "Accommodation",
+      name: 'Accommodation',
       description: "Items based on where you're staying",
       icon: <Home className="w-5 h-5" />,
       categories: [
-        { id: "hotel", label: "Hotel", icon: "🏨" },
-        { id: "camping", label: "Camping", icon: "🏕️" },
-        { id: "glamping", label: "Glamping", icon: "⛺" },
-        { id: "couch_surfing", label: "Couch Surfing", icon: "🛋️" },
-        { id: "airbnb", label: "Airbnb", icon: "🏠" }
-      ]
+        { id: 'hotel', label: 'Hotel', icon: '🏨' },
+        { id: 'camping', label: 'Camping', icon: '🏕️' },
+        { id: 'glamping', label: 'Glamping', icon: '⛺' },
+        { id: 'couch_surfing', label: 'Couch Surfing', icon: '🛋️' },
+        { id: 'airbnb', label: 'Airbnb', icon: '🏠' },
+      ],
     },
     companion: {
-      name: "Travel Companions",
+      name: 'Travel Companions',
       description: "Items depending on who you're traveling with",
       icon: <Users className="w-5 h-5" />,
       categories: [
-        { id: "alone", label: "Solo Travel", icon: "🧍" },
-        { id: "spouse", label: "With Partner", icon: "💑" },
-        { id: "friends", label: "With Friends", icon: "👥" },
-        { id: "family", label: "With Family", icon: "👨‍👩‍👧" }
-      ]
-    }
+        { id: 'alone', label: 'Solo Travel', icon: '🧍' },
+        { id: 'spouse', label: 'With Partner', icon: '💑' },
+        { id: 'friends', label: 'With Friends', icon: '👥' },
+        { id: 'family', label: 'With Family', icon: '👨‍👩‍👧' },
+      ],
+    },
   };
 
   useEffect(() => {
@@ -70,9 +66,9 @@ export default function ListManagerPage() {
 
   // Escape key navigation
   useEffect(() => {
-    const handleEscapeKey = (event) => {
+    const handleEscapeKey = event => {
       if (event.key === 'Escape') {
-        navigate(createPageUrl("Home"));
+        navigate(createPageUrl('Home'));
       }
     };
 
@@ -86,38 +82,36 @@ export default function ListManagerPage() {
     setLoading(true);
     try {
       const user = await withRetry(() => User.me());
-      
+
       if (!user.has_initialized_base_lists) {
         await initializeUser(user.id);
       }
-      
-      const fetchedLists = await withRetry(() => 
-        List.filter({ owner_id: user.id })
-      );
-      
+
+      const fetchedLists = await withRetry(() => List.filter({ owner_id: user.id }));
+
       setLists({
         activity: fetchedLists.filter(l => l.list_type === 'activity'),
         accommodation: fetchedLists.filter(l => l.list_type === 'accommodation'),
-        companion: fetchedLists.filter(l => l.list_type === 'companion')
+        companion: fetchedLists.filter(l => l.list_type === 'companion'),
       });
     } catch (error) {
-      console.error("Error loading lists:", error);
+      console.error('Error loading lists:', error);
       toast({
-        title: "Error",
-        description: "Failed to load lists. Please try again in a moment.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to load lists. Please try again in a moment.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const initializeUser = async (userId) => {
+  const initializeUser = async userId => {
     try {
       // Mark user as initialized
       await User.updateMyUserData({ has_initialized_base_lists: true });
     } catch (error) {
-      console.error("Error initializing default lists:", error);
+      console.error('Error initializing default lists:', error);
     }
   };
 
@@ -125,28 +119,28 @@ export default function ListManagerPage() {
     navigate(createPageUrl(`ListEditor?type=${listType}&category=${categoryId}`));
   };
 
-  const handleAddList = (listType) => {
+  const handleAddList = listType => {
     setCreating(listType);
   };
 
-  const handleSaveCustomList = async (customList) => {
+  const handleSaveCustomList = async customList => {
     try {
       const user = await User.me();
-      
+
       // Check if a list with this category already exists
       const existingList = lists[customList.list_type].find(
-        list => list.category === customList.category
+        list => list.category === customList.category,
       );
-      
+
       if (existingList) {
         toast({
-          title: "List already exists",
-          description: "A list with this name already exists",
-          variant: "destructive"
+          title: 'List already exists',
+          description: 'A list with this name already exists',
+          variant: 'destructive',
         });
         return;
       }
-      
+
       // Create the new list
       await List.create({
         list_type: customList.list_type,
@@ -155,28 +149,30 @@ export default function ListManagerPage() {
         icon: customList.icon,
         items: [],
         owner_id: user.id,
-        is_default: false
+        is_default: false,
       });
-      
+
       // Reload lists to show the new one
       await loadLists();
-      
+
       toast({
-        title: "List created",
-        description: "Your new list has been created successfully"
+        title: 'List created',
+        description: 'Your new list has been created successfully',
       });
-      
+
       // Close the form
       setCreating(null);
-      
+
       // Navigate to edit the new list
-      navigate(createPageUrl(`ListEditor?type=${customList.list_type}&category=${customList.category}`));
+      navigate(
+        createPageUrl(`ListEditor?type=${customList.list_type}&category=${customList.category}`),
+      );
     } catch (error) {
-      console.error("Error creating custom list:", error);
+      console.error('Error creating custom list:', error);
       toast({
-        title: "Error",
-        description: "Failed to create list. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to create list. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -206,7 +202,10 @@ export default function ListManagerPage() {
         {/* Scrollable page with all list types */}
         <div className="space-y-8">
           {Object.entries(listTypes).map(([typeId, typeConfig]) => (
-            <div key={typeId} className="bg-white rounded-xl shadow-sm border">
+            <div
+              key={typeId}
+              className="bg-white rounded-xl shadow-sm border"
+            >
               <div className="p-4 border-b">
                 <div className="flex items-center gap-2">
                   {typeConfig.icon}
@@ -214,11 +213,11 @@ export default function ListManagerPage() {
                 </div>
                 <p className="text-gray-500 mt-1">{typeConfig.description}</p>
               </div>
-              
+
               <div className="p-2">
                 {creating === typeId ? (
                   <div className="p-2">
-                    <CustomListForm 
+                    <CustomListForm
                       listType={typeId}
                       onCancel={() => setCreating(null)}
                       onSave={handleSaveCustomList}
@@ -234,15 +233,16 @@ export default function ListManagerPage() {
                         .map(list => ({
                           id: list.category,
                           label: list.name || list.category,
-                          icon: list.icon || "📋",
-                          custom: true
-                        }))
-                    ].map((category) => {
+                          icon: list.icon || '📋',
+                          custom: true,
+                        })),
+                    ].map(category => {
                       const existingList = lists[typeId].find(l => l.category === category.id);
-                      const hasItems = existingList && existingList.items && existingList.items.length > 0;
-                      
+                      const hasItems =
+                        existingList && existingList.items && existingList.items.length > 0;
+
                       return (
-                        <div 
+                        <div
                           key={category.id}
                           onClick={() => handleEditList(typeId, category.id)}
                           className="flex items-center p-3 rounded-lg border bg-white hover:bg-gray-50 transition-colors cursor-pointer"
@@ -270,22 +270,22 @@ export default function ListManagerPage() {
                   </div>
                 )}
               </div>
-              
+
               {/* Add button */}
               <div className="p-4 border-t flex justify-center">
                 {creating === typeId ? (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="w-full"
                     onClick={() => setCreating(null)}
                   >
                     Cancel
                   </Button>
                 ) : (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="w-full"
                     onClick={() => handleAddList(typeId)}
                   >

@@ -1,18 +1,21 @@
-
-import { useState, useEffect, useRef } from "react";
-import { List } from "@/api/entities";
-import { User } from "@/api/entities";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
-import { 
-  ArrowLeft, Loader2, Plus, Tag, Trash2
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from 'react';
+import { List } from '@/api/entities';
+import { User } from '@/api/entities';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from '@/components/ui/use-toast';
+import { ArrowLeft, Loader2, Plus, Tag, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { useSearchParams } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,20 +25,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { withRetry } from "../components/utils/api-helpers";
+} from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { withRetry } from '../components/utils/api-helpers';
 
 export default function ListEditorPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const listType = searchParams.get("type");
-  const categoryId = searchParams.get("category");
-  
+  const listType = searchParams.get('type');
+  const categoryId = searchParams.get('category');
+
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState(null);
   const [items, setItems] = useState([]);
@@ -43,80 +42,139 @@ export default function ListEditorPage() {
   const [selectedIcon, setSelectedIcon] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listName, setListName] = useState(''); // Add this state for the list name
-  
-  const [newItemName, setNewItemName] = useState("");
-  const [newItemCategory, setNewItemCategory] = useState("essentials");
+
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('essentials');
   const nameInputRef = useRef(null);
 
   const listTypeDetails = {
     activity: {
       categories: [
-        { id: "beach", label: "Beach Trip", icon: "🏖️" },
-        { id: "camping", label: "Camping", icon: "🏕️" },
-        { id: "climbing", label: "Climbing", icon: "🧗" },
-        { id: "hiking", label: "Hiking", icon: "🥾" },
-        { id: "partying", label: "Party", icon: "🎉" },
-        { id: "business", label: "Business", icon: "💼" },
-        { id: "sightseeing", label: "Sightseeing", icon: "🏛️" }
-      ]
+        { id: 'beach', label: 'Beach Trip', icon: '🏖️' },
+        { id: 'camping', label: 'Camping', icon: '🏕️' },
+        { id: 'climbing', label: 'Climbing', icon: '🧗' },
+        { id: 'hiking', label: 'Hiking', icon: '🥾' },
+        { id: 'partying', label: 'Party', icon: '🎉' },
+        { id: 'business', label: 'Business', icon: '💼' },
+        { id: 'sightseeing', label: 'Sightseeing', icon: '🏛️' },
+      ],
     },
     accommodation: {
       categories: [
-        { id: "hotel", label: "Hotel", icon: "🏨" },
-        { id: "camping", label: "Camping", icon: "🏕️" },
-        { id: "glamping", label: "Glamping", icon: "⛺" },
-        { id: "couch_surfing", label: "Couch Surfing", icon: "🛋️" },
-        { id: "airbnb", label: "Airbnb", icon: "🏠" }
-      ]
+        { id: 'hotel', label: 'Hotel', icon: '🏨' },
+        { id: 'camping', label: 'Camping', icon: '🏕️' },
+        { id: 'glamping', label: 'Glamping', icon: '⛺' },
+        { id: 'couch_surfing', label: 'Couch Surfing', icon: '🛋️' },
+        { id: 'airbnb', label: 'Airbnb', icon: '🏠' },
+      ],
     },
     companion: {
       categories: [
-        { id: "alone", label: "Solo Travel", icon: "🧍" },
-        { id: "spouse", label: "With Partner", icon: "💑" },
-        { id: "friends", label: "With Friends", icon: "👥" },
-        { id: "family", label: "With Family", icon: "👨‍👩‍👧" }
-      ]
-    }
+        { id: 'alone', label: 'Solo Travel', icon: '🧍' },
+        { id: 'spouse', label: 'With Partner', icon: '💑' },
+        { id: 'friends', label: 'With Friends', icon: '👥' },
+        { id: 'family', label: 'With Family', icon: '👨‍👩‍👧' },
+      ],
+    },
   };
 
   const itemCategories = [
-    { value: "clothing", label: "Clothing" },
-    { value: "toiletries", label: "Toiletries" },
-    { value: "tech", label: "Tech" },
-    { value: "gear", label: "Gear" },
-    { value: "essentials", label: "Essentials" }
+    { value: 'clothing', label: 'Clothing' },
+    { value: 'toiletries', label: 'Toiletries' },
+    { value: 'tech', label: 'Tech' },
+    { value: 'gear', label: 'Gear' },
+    { value: 'essentials', label: 'Essentials' },
   ];
 
-  const selectedCategory = listTypeDetails[listType]?.categories.find(
-    c => c.id === categoryId
-  );
+  const selectedCategory = listTypeDetails[listType]?.categories.find(c => c.id === categoryId);
 
   // List of emojis for the current list type
   const availableEmojis = listTypeDetails[listType]?.categories.map(c => c.icon) || [];
-  
+
   // Add more emojis related to each type
   const additionalEmojis = {
     activity: [
-      "🏄‍♂️", "🚴‍♀️", "🧘‍♀️", "🏂", "🏊‍♂️", "🚶‍♀️", "⛷️", "🛹", "🎣", "🎯", "🎭", "🏓",
-      "🏃‍♂️", "🚣‍♀️", "⚽", "🎾", "🏸", "🏹", "🤿", "🎪", "🎨", "🎰", "🎲"
+      '🏄‍♂️',
+      '🚴‍♀️',
+      '🧘‍♀️',
+      '🏂',
+      '🏊‍♂️',
+      '🚶‍♀️',
+      '⛷️',
+      '🛹',
+      '🎣',
+      '🎯',
+      '🎭',
+      '🏓',
+      '🏃‍♂️',
+      '🚣‍♀️',
+      '⚽',
+      '🎾',
+      '🏸',
+      '🏹',
+      '🤿',
+      '🎪',
+      '🎨',
+      '🎰',
+      '🎲',
     ],
     accommodation: [
-      "🏡", "🛖", "🏘️", "🏚️", "🏙️", "🛏️", "🏰", "⛩️", "⛪", "🏢",
-      "🏪", "🏨", "🌄", "🏔️", "🗺️", "🎪", "🏕️", "🌃", "🏦", "🏛️", "🏭", "🏬", "🗼"
+      '🏡',
+      '🛖',
+      '🏘️',
+      '🏚️',
+      '🏙️',
+      '🛏️',
+      '🏰',
+      '⛩️',
+      '⛪',
+      '🏢',
+      '🏪',
+      '🏨',
+      '🌄',
+      '🏔️',
+      '🗺️',
+      '🎪',
+      '🏕️',
+      '🌃',
+      '🏦',
+      '🏛️',
+      '🏭',
+      '🏬',
+      '🗼',
     ],
     companion: [
-      "👨‍👩‍👦", "👨‍👨‍👧‍👧", "👩‍👩‍👦‍👦", "👶", "🧒", "👴", "👵", "🐕", "🐈",
-      "👥", "👫", "👬", "👭", "🧑‍🤝‍🧑", "👯", "👯‍♂️", "👪", "🐶", "🦮", "🐱", "🐰"
-    ]
+      '👨‍👩‍👦',
+      '👨‍👨‍👧‍👧',
+      '👩‍👩‍👦‍👦',
+      '👶',
+      '🧒',
+      '👴',
+      '👵',
+      '🐕',
+      '🐈',
+      '👥',
+      '👫',
+      '👬',
+      '👭',
+      '🧑‍🤝‍🧑',
+      '👯',
+      '👯‍♂️',
+      '👪',
+      '🐶',
+      '🦮',
+      '🐱',
+      '🐰',
+    ],
   };
-  
+
   const allEmojis = [...new Set([...availableEmojis, ...(additionalEmojis[listType] || [])])];
 
   useEffect(() => {
     if (listType && categoryId) {
       loadList();
     } else {
-      navigate(createPageUrl("ListManager"));
+      navigate(createPageUrl('ListManager'));
     }
   }, [listType, categoryId]);
 
@@ -128,9 +186,9 @@ export default function ListEditorPage() {
 
   // Escape key navigation
   useEffect(() => {
-    const handleEscapeKey = (event) => {
+    const handleEscapeKey = event => {
       if (event.key === 'Escape') {
-        navigate(createPageUrl("ListManager"));
+        navigate(createPageUrl('ListManager'));
       }
     };
 
@@ -144,15 +202,15 @@ export default function ListEditorPage() {
     setLoading(true);
     try {
       const user = await withRetry(() => User.me());
-      const lists = await withRetry(() => 
-        List.filter({ 
+      const lists = await withRetry(() =>
+        List.filter({
           owner_id: user.id,
-          list_type: listType
-        })
+          list_type: listType,
+        }),
       );
-      
+
       const existingList = lists.find(l => l.category === categoryId);
-      
+
       if (existingList) {
         setList(existingList);
         setItems(existingList.items || []);
@@ -164,7 +222,7 @@ export default function ListEditorPage() {
           category: categoryId,
           items: [],
           owner_id: user.id,
-          name: selectedCategory?.label
+          name: selectedCategory?.label,
         };
         setList(newList);
         setListName(selectedCategory?.label);
@@ -172,22 +230,22 @@ export default function ListEditorPage() {
         setSelectedIcon(selectedCategory?.icon);
       }
     } catch (error) {
-      console.error("Error loading list:", error);
+      console.error('Error loading list:', error);
       toast({
-        title: "Error",
-        description: "Failed to load list. Please try again in a moment.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to load list. Please try again in a moment.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const autoSave = async (updatedItems) => {
+  const autoSave = async updatedItems => {
     try {
       if (list?.id) {
         await List.update(list.id, {
-          items: updatedItems
+          items: updatedItems,
         });
       } else {
         const newList = await List.create({
@@ -196,16 +254,16 @@ export default function ListEditorPage() {
           name: listName,
           items: updatedItems,
           owner_id: list.owner_id,
-          is_default: false
+          is_default: false,
         });
         setList(newList);
       }
     } catch (error) {
-      console.error("Error auto-saving list:", error);
+      console.error('Error auto-saving list:', error);
       toast({
-        title: "Auto-save failed",
-        description: "Your changes may not be saved. Please try again.",
-        variant: "destructive"
+        title: 'Auto-save failed',
+        description: 'Your changes may not be saved. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -218,73 +276,69 @@ export default function ListEditorPage() {
       category: newItemCategory,
       quantity: 1,
       weather_dependent: false,
-      weather_type: "any"
+      weather_type: 'any',
     };
 
     const updatedItems = [...items, newItem];
     setItems(updatedItems);
-    setNewItemName("");
+    setNewItemName('');
     await autoSave(updatedItems);
   };
 
-  const handleRemoveItem = async (index) => {
+  const handleRemoveItem = async index => {
     const updatedItems = items.filter((_, i) => i !== index);
     setItems(updatedItems);
     await autoSave(updatedItems);
   };
-
-
 
   const handleDeleteList = async () => {
     try {
       if (list?.id) {
         await List.delete(list.id);
         toast({
-          title: "List deleted",
-          description: "Your list has been deleted successfully"
+          title: 'List deleted',
+          description: 'Your list has been deleted successfully',
         });
-        navigate(createPageUrl("ListManager"));
+        navigate(createPageUrl('ListManager'));
       }
     } catch (error) {
-      console.error("Error deleting list:", error);
+      console.error('Error deleting list:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete list",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to delete list',
+        variant: 'destructive',
       });
     }
   };
 
-  const handleNameChange = async (newName) => {
+  const handleNameChange = async newName => {
     try {
       if (!newName.trim()) return;
-      
+
       if (list?.id) {
         // Update the list in the database with retry
-        await withRetry(() => 
-          List.update(list.id, { name: newName })
-        );
-        
+        await withRetry(() => List.update(list.id, { name: newName }));
+
         // Update states
         setList(prev => ({
           ...prev,
-          name: newName
+          name: newName,
         }));
         setListName(newName);
-        
+
         toast({
-          title: "Success",
-          description: "List name updated"
+          title: 'Success',
+          description: 'List name updated',
         });
       } else {
         setListName(newName);
       }
     } catch (error) {
-      console.error("Error updating list name:", error);
+      console.error('Error updating list name:', error);
       toast({
-        title: "Error",
-        description: "Failed to update list name. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to update list name. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -296,7 +350,7 @@ export default function ListEditorPage() {
     setEditingName(false);
   };
 
-  const handleNameKeyDown = (e) => {
+  const handleNameKeyDown = e => {
     if (e.key === 'Enter') {
       if (nameInputRef.current && nameInputRef.current.value.trim()) {
         handleNameChange(nameInputRef.current.value);
@@ -305,32 +359,32 @@ export default function ListEditorPage() {
     }
   };
 
-  const handleItemNameKeyDown = (e) => {
+  const handleItemNameKeyDown = e => {
     if (e.key === 'Enter') {
       handleAddItem();
     }
   };
 
-  const handleEmojiSelect = async (emoji) => {
+  const handleEmojiSelect = async emoji => {
     setSelectedIcon(emoji);
-    
+
     // Update the icon in the database if the list exists
     if (list?.id) {
       try {
         await List.update(list.id, {
-          icon: emoji
+          icon: emoji,
         });
-        
+
         toast({
-          title: "Success",
-          description: "List icon updated"
+          title: 'Success',
+          description: 'List icon updated',
         });
       } catch (error) {
-        console.error("Error updating list icon:", error);
+        console.error('Error updating list icon:', error);
         toast({
-          title: "Error",
-          description: "Failed to update list icon",
-          variant: "destructive"
+          title: 'Error',
+          description: 'Failed to update list icon',
+          variant: 'destructive',
         });
       }
     }
@@ -353,10 +407,10 @@ export default function ListEditorPage() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate(createPageUrl("ListManager"))}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(createPageUrl('ListManager'))}
                 className="mr-2"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -372,7 +426,7 @@ export default function ListEditorPage() {
                     <PopoverContent className="w-72">
                       <div className="grid grid-cols-6 gap-2">
                         {allEmojis.map((emoji, i) => (
-                          <div 
+                          <div
                             key={i}
                             className="p-2 text-xl cursor-pointer text-center hover:bg-gray-100 rounded"
                             onClick={() => handleEmojiSelect(emoji)}
@@ -383,7 +437,7 @@ export default function ListEditorPage() {
                       </div>
                     </PopoverContent>
                   </Popover>
-                  
+
                   {editingName ? (
                     <Input
                       ref={nameInputRef}
@@ -394,7 +448,7 @@ export default function ListEditorPage() {
                       autoFocus
                     />
                   ) : (
-                    <h1 
+                    <h1
                       className="text-xl font-bold cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
                       onClick={() => setEditingName(true)}
                     >
@@ -430,24 +484,33 @@ export default function ListEditorPage() {
               <Input
                 placeholder="Item name"
                 value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
+                onChange={e => setNewItemName(e.target.value)}
                 onKeyDown={handleItemNameKeyDown}
                 className="flex-1"
               />
-              <Select value={newItemCategory} onValueChange={setNewItemCategory}>
+              <Select
+                value={newItemCategory}
+                onValueChange={setNewItemCategory}
+              >
                 <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
                   {itemCategories.map(cat => (
-                    <SelectItem key={cat.value} value={cat.value}>
+                    <SelectItem
+                      key={cat.value}
+                      value={cat.value}
+                    >
                       {cat.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAddItem} className="w-full">
+            <Button
+              onClick={handleAddItem}
+              className="w-full"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Add Item
             </Button>
@@ -473,9 +536,7 @@ export default function ListEditorPage() {
                       <span className="text-sm text-gray-500">
                         {itemCategories.find(cat => cat.value === item.category)?.label}
                       </span>
-                      <span className="text-sm text-gray-500">
-                        × {item.quantity}
-                      </span>
+                      <span className="text-sm text-gray-500">× {item.quantity}</span>
                     </div>
                   </div>
                 </div>
@@ -496,11 +557,12 @@ export default function ListEditorPage() {
             )}
           </CardContent>
         </Card>
-
-
       </div>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete List</AlertDialogTitle>

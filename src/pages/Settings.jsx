@@ -1,43 +1,42 @@
-
-import { useState, useEffect } from "react";
-import { User } from "@/api/entities";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
-import { Bell, Sun, Thermometer, Loader2, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import DeleteAccountDialog from "../components/settings/DeleteAccountDialog";
+import { useState, useEffect } from 'react';
+import { User } from '@/api/entities';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
+import { Bell, Sun, Thermometer, Loader2, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import DeleteAccountDialog from '../components/settings/DeleteAccountDialog';
 export default function SettingsPage() {
   const navigate = useNavigate();
   const [settings, setSettings] = useState({
     notifications: true,
     weather_sensitivity: {
       cold_threshold: 15,
-      hot_threshold: 25
+      hot_threshold: 25,
     },
-    minimal_mode: false
+    minimal_mode: false,
   });
   const [loading, setLoading] = useState(true);
   const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
 
-  const handleSettingChange = async (newSettings) => {
+  const handleSettingChange = async newSettings => {
     try {
       await User.updateMyUserData({ settings: newSettings });
       setSettings(newSettings);
       toast({
-        title: "Settings updated",
-        description: "Your preferences have been saved"
+        title: 'Settings updated',
+        description: 'Your preferences have been saved',
       });
     } catch (error) {
-      console.error("Error saving settings:", error);
+      console.error('Error saving settings:', error);
       toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to save settings. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -48,9 +47,9 @@ export default function SettingsPage() {
 
   // Escape key navigation
   useEffect(() => {
-    const handleEscapeKey = (event) => {
+    const handleEscapeKey = event => {
       if (event.key === 'Escape') {
-        navigate(createPageUrl("Home"));
+        navigate(createPageUrl('Home'));
       }
     };
 
@@ -64,41 +63,39 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       const user = await User.me();
-      
+
       if (user.settings) {
         // Merge loaded settings with defaults to ensure all required properties exist
         const defaultSettings = {
           notifications: true,
           weather_sensitivity: {
             cold_threshold: 15,
-            hot_threshold: 25
+            hot_threshold: 25,
           },
-          minimal_mode: false
+          minimal_mode: false,
         };
-        
+
         const mergedSettings = {
           ...defaultSettings,
           ...user.settings,
           weather_sensitivity: {
             ...defaultSettings.weather_sensitivity,
-            ...user.settings.weather_sensitivity
-          }
+            ...user.settings.weather_sensitivity,
+          },
         };
         setSettings(mergedSettings);
       }
     } catch (error) {
-      console.error("Error loading user data:", error);
+      console.error('Error loading user data:', error);
       toast({
-        title: "Error",
-        description: "Failed to load user settings",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to load user settings',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
-
-
 
   const handleLogout = async () => {
     try {
@@ -107,9 +104,9 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error logging out:', error);
       toast({
-        title: "Error",
-        description: "Failed to log out",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to log out',
+        variant: 'destructive',
       });
     }
   };
@@ -146,7 +143,7 @@ export default function SettingsPage() {
               <Switch
                 id="notifications"
                 checked={settings.notifications}
-                onCheckedChange={(checked) => {
+                onCheckedChange={checked => {
                   const newSettings = { ...settings, notifications: checked };
                   handleSettingChange(newSettings);
                 }}
@@ -175,14 +172,15 @@ export default function SettingsPage() {
                     ...settings,
                     weather_sensitivity: {
                       ...settings.weather_sensitivity,
-                      cold_threshold: value
-                    }
+                      cold_threshold: value,
+                    },
                   };
                   handleSettingChange(newSettings);
                 }}
               />
               <p className="text-sm text-gray-500">
-                Items will be added for cold weather below {settings.weather_sensitivity.cold_threshold}°C
+                Items will be added for cold weather below{' '}
+                {settings.weather_sensitivity.cold_threshold}°C
               </p>
             </div>
 
@@ -198,14 +196,15 @@ export default function SettingsPage() {
                     ...settings,
                     weather_sensitivity: {
                       ...settings.weather_sensitivity,
-                      hot_threshold: value
-                    }
+                      hot_threshold: value,
+                    },
                   };
                   handleSettingChange(newSettings);
                 }}
               />
               <p className="text-sm text-gray-500">
-                Items will be added for hot weather above {settings.weather_sensitivity.hot_threshold}°C
+                Items will be added for hot weather above{' '}
+                {settings.weather_sensitivity.hot_threshold}°C
               </p>
             </div>
           </CardContent>
@@ -224,7 +223,7 @@ export default function SettingsPage() {
               <Switch
                 id="minimal_mode"
                 checked={settings.minimal_mode}
-                onCheckedChange={(checked) => {
+                onCheckedChange={checked => {
                   const newSettings = { ...settings, minimal_mode: checked };
                   handleSettingChange(newSettings);
                 }}
@@ -241,8 +240,8 @@ export default function SettingsPage() {
             <CardTitle>Account</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full justify-start text-red-600 hover:text-red-700"
               onClick={handleLogout}
             >
@@ -261,7 +260,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex justify-end">
-              <Button 
+              <Button
                 variant="destructive"
                 onClick={() => setDeleteAccountDialogOpen(true)}
               >
@@ -271,8 +270,8 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <DeleteAccountDialog 
-          open={deleteAccountDialogOpen} 
+        <DeleteAccountDialog
+          open={deleteAccountDialogOpen}
           onOpenChange={setDeleteAccountDialogOpen}
         />
       </div>

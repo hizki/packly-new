@@ -9,25 +9,25 @@ import { GripVertical, Plus, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
 const DEFAULT_DAY_BEFORE_TIPS = [
-  "Check flight/travel times",
-  "Charge all electronic devices",
-  "Download offline maps and entertainment",
-  "Set out-of-office email response",
-  "Check weather forecast",
-  "Empty fridge of perishables",
-  "Do laundry if needed",
-  "Prepare documents and tickets"
+  'Check flight/travel times',
+  'Charge all electronic devices',
+  'Download offline maps and entertainment',
+  'Set out-of-office email response',
+  'Check weather forecast',
+  'Empty fridge of perishables',
+  'Do laundry if needed',
+  'Prepare documents and tickets',
 ];
 
 const DEFAULT_BEFORE_LEAVING_TIPS = [
-  "Check all windows are closed",
-  "Unplug non-essential appliances",
-  "Adjust thermostat",
-  "Lock all doors",
-  "Take out trash",
-  "Check you have your passport/ID",
-  "Check you have your wallet/money",
-  "Turn off water main if needed"
+  'Check all windows are closed',
+  'Unplug non-essential appliances',
+  'Adjust thermostat',
+  'Lock all doors',
+  'Take out trash',
+  'Check you have your passport/ID',
+  'Check you have your wallet/money',
+  'Turn off water main if needed',
 ];
 
 export default function TipListManager() {
@@ -44,7 +44,7 @@ export default function TipListManager() {
     try {
       const currentUser = await User.me();
       const lists = await TipList.filter({ owner_id: currentUser.id });
-      
+
       const dayBefore = lists.find(list => list.list_type === 'day_before');
       const beforeLeaving = lists.find(list => list.list_type === 'before_leaving');
 
@@ -57,13 +57,15 @@ export default function TipListManager() {
 
       const updatedLists = await TipList.filter({ owner_id: currentUser.id });
       setDayBeforeTips(updatedLists.find(list => list.list_type === 'day_before')?.tips || []);
-      setBeforeLeavingTips(updatedLists.find(list => list.list_type === 'before_leaving')?.tips || []);
+      setBeforeLeavingTips(
+        updatedLists.find(list => list.list_type === 'before_leaving')?.tips || [],
+      );
     } catch (error) {
       console.error('Error loading tip lists:', error);
       toast({
-        title: "Error",
-        description: "Failed to load tip lists",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to load tip lists',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -79,8 +81,8 @@ export default function TipListManager() {
         id: `${listType}_${index}`,
         content,
         is_default: true,
-        order: index
-      }))
+        order: index,
+      })),
     });
   };
 
@@ -94,7 +96,7 @@ export default function TipListManager() {
     // Update order numbers
     const updatedItems = items.map((item, index) => ({
       ...item,
-      order: index
+      order: index,
     }));
 
     if (listType === 'day_before') {
@@ -105,37 +107,37 @@ export default function TipListManager() {
 
     try {
       const currentUser = await User.me();
-      const lists = await TipList.filter({ 
+      const lists = await TipList.filter({
         owner_id: currentUser.id,
-        list_type: listType 
+        list_type: listType,
       });
 
       const list = lists[0];
       if (list) {
         await TipList.update(list.id, {
           ...list,
-          tips: updatedItems
+          tips: updatedItems,
         });
       }
     } catch (error) {
       console.error('Error updating tip order:', error);
       toast({
-        title: "Error",
-        description: "Failed to update tip order",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to update tip order',
+        variant: 'destructive',
       });
     }
   };
 
-  const addTip = async (listType) => {
+  const addTip = async listType => {
     const tipContent = newTip[listType === 'day_before' ? 'dayBefore' : 'beforeLeaving'].trim();
     if (!tipContent) return;
 
     try {
       const currentUser = await User.me();
-      const lists = await TipList.filter({ 
+      const lists = await TipList.filter({
         owner_id: currentUser.id,
-        list_type: listType 
+        list_type: listType,
       });
 
       const list = lists[0];
@@ -145,13 +147,13 @@ export default function TipListManager() {
           id: `${listType}_${Date.now()}`,
           content: tipContent,
           is_default: false,
-          order: newTips.length
+          order: newTips.length,
         };
         newTips.push(newTipItem);
 
         await TipList.update(list.id, {
           ...list,
-          tips: newTips
+          tips: newTips,
         });
 
         if (listType === 'day_before') {
@@ -165,9 +167,9 @@ export default function TipListManager() {
     } catch (error) {
       console.error('Error adding tip:', error);
       toast({
-        title: "Error",
-        description: "Failed to add tip",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to add tip',
+        variant: 'destructive',
       });
     }
   };
@@ -175,9 +177,9 @@ export default function TipListManager() {
   const deleteTip = async (listType, tipId) => {
     try {
       const currentUser = await User.me();
-      const lists = await TipList.filter({ 
+      const lists = await TipList.filter({
         owner_id: currentUser.id,
-        list_type: listType 
+        list_type: listType,
       });
 
       const list = lists[0];
@@ -188,7 +190,7 @@ export default function TipListManager() {
 
         await TipList.update(list.id, {
           ...list,
-          tips: updatedTips
+          tips: updatedTips,
         });
 
         if (listType === 'day_before') {
@@ -200,31 +202,38 @@ export default function TipListManager() {
     } catch (error) {
       console.error('Error deleting tip:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete tip",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to delete tip',
+        variant: 'destructive',
       });
     }
   };
 
   const renderTipList = (tips, listType) => (
-    <DragDropContext onDragEnd={(result) => handleDragEnd(result, listType)}>
+    <DragDropContext onDragEnd={result => handleDragEnd(result, listType)}>
       <Droppable droppableId={`droppable-${listType}`}>
-        {(provided) => (
+        {provided => (
           <div
             {...provided.droppableProps}
             ref={provided.innerRef}
             className="space-y-2"
           >
             {tips.map((tip, index) => (
-              <Draggable key={tip.id} draggableId={tip.id} index={index}>
-                {(provided) => (
+              <Draggable
+                key={tip.id}
+                draggableId={tip.id}
+                index={index}
+              >
+                {provided => (
                   <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     className="flex items-center gap-2 bg-white p-2 rounded-lg border"
                   >
-                    <div {...provided.dragHandleProps} className="cursor-move">
+                    <div
+                      {...provided.dragHandleProps}
+                      className="cursor-move"
+                    >
                       <GripVertical className="h-4 w-4 text-gray-400" />
                     </div>
                     <span className="flex-1">{tip.content}</span>
@@ -264,8 +273,8 @@ export default function TipListManager() {
             <Input
               placeholder="Add new tip"
               value={newTip.dayBefore}
-              onChange={(e) => setNewTip({ ...newTip, dayBefore: e.target.value })}
-              onKeyPress={(e) => e.key === 'Enter' && addTip('day_before')}
+              onChange={e => setNewTip({ ...newTip, dayBefore: e.target.value })}
+              onKeyPress={e => e.key === 'Enter' && addTip('day_before')}
             />
             <Button onClick={() => addTip('day_before')}>
               <Plus className="h-4 w-4 mr-2" />
@@ -285,8 +294,8 @@ export default function TipListManager() {
             <Input
               placeholder="Add new tip"
               value={newTip.beforeLeaving}
-              onChange={(e) => setNewTip({ ...newTip, beforeLeaving: e.target.value })}
-              onKeyPress={(e) => e.key === 'Enter' && addTip('before_leaving')}
+              onChange={e => setNewTip({ ...newTip, beforeLeaving: e.target.value })}
+              onKeyPress={e => e.key === 'Enter' && addTip('before_leaving')}
             />
             <Button onClick={() => addTip('before_leaving')}>
               <Plus className="h-4 w-4 mr-2" />
