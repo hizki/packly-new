@@ -32,6 +32,7 @@ export default function NewListPage() {
   const [listName, setListName] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const [missingInfoWarnings, setMissingInfoWarnings] = useState([]);
+  const [travelTips, setTravelTips] = useState([]);
   
   const [validationErrors, setValidationErrors] = useState({});
 
@@ -463,6 +464,8 @@ export default function NewListPage() {
     const startDate = new Date(lastDestination.end_date);
     const endDate = addDays(startDate, 7);
     
+    const newDestinationIndex = formData.destinations.length; // This will be the index of the newly added destination
+    
     const newDestination = {
       location: "",
       start_date: startDate,
@@ -484,6 +487,12 @@ export default function NewListPage() {
       if (window.google) {
         console.log("Reinitializing autocomplete after adding destination");
         initializeMapAndAutocomplete();
+      }
+      
+      // Focus on the new destination input field
+      const newInputElement = document.getElementById(`destination-${newDestinationIndex}`);
+      if (newInputElement) {
+        newInputElement.focus();
       }
     }, 300);
   };
@@ -605,7 +614,8 @@ export default function NewListPage() {
       return "My Packing List";
     }
     
-    const destinationNames = validDestinations.map(d => d.location);
+    // Remove duplicate destination names while preserving order
+    const destinationNames = [...new Set(validDestinations.map(d => d.location))];
     
     let totalTripDays = 0;
     validDestinations.forEach(destination => {
@@ -638,8 +648,31 @@ export default function NewListPage() {
       timeframe = "A couple of weeks";
     } else if (totalTripDays <= 20) {
       timeframe = `${totalTripDays} days`;
-    } else {
+    } else if (totalTripDays <= 28) {
       timeframe = `${Math.round(totalTripDays / 7)} weeks`;
+    } else {
+      // Month-based logic for trips over 4 weeks
+      const months = totalTripDays / 30.5; // Average days per month
+      
+      if (totalTripDays <= 42) {
+        timeframe = "Over a month";
+      } else if (totalTripDays <= 52) {
+        timeframe = "A month and a half";
+      } else if (totalTripDays <= 67) {
+        timeframe = "Nearly 2 months";
+      } else {
+        // For longer trips, calculate months more precisely
+        const fullMonths = Math.floor(months);
+        const remainingDays = totalTripDays - (fullMonths * 30.5);
+        
+        if (remainingDays <= 10) {
+          timeframe = fullMonths === 2 ? "2 months" : `${fullMonths} months`;
+        } else if (remainingDays <= 20) {
+          timeframe = `${fullMonths} and a half months`;
+        } else {
+          timeframe = `Nearly ${fullMonths + 1} months`;
+        }
+      }
     }
     
     if (formData.accommodation === "camping") {
@@ -723,6 +756,7 @@ export default function NewListPage() {
       // Generate dynamic suggestions based on all parameters
       const generateDynamicSuggestions = (weatherType, activities, accommodation, tripDuration) => {
         const warnings = [];
+        const tips = [];
         let items = [];
 
         // Check for missing information and add warnings
@@ -735,8 +769,10 @@ export default function NewListPage() {
         if (!accommodation) {
           warnings.push("Accommodation type not specified - using hotel defaults");
         }
+        
+        // Add travel tips
         if (tripDuration > 14) {
-          warnings.push("For trips longer than 2 weeks, pack 7 days worth of underwear and socks, then do laundry every few days");
+          tips.push("For trips longer than 2 weeks, pack 7 days worth of underwear and socks, then do laundry every few days");
         }
 
         // Base clothing quantities based on trip duration
@@ -857,10 +893,11 @@ export default function NewListPage() {
           ...accommodationItems
         ];
 
-        // Set warnings for missing info
+        // Set warnings for missing info and travel tips
         setMissingInfoWarnings(warnings);
+        setTravelTips(tips);
 
-        return { items, warnings };
+        return { items, warnings, tips };
       };
 
       const tripDuration = calculateTripDuration();
@@ -1327,6 +1364,16 @@ export default function NewListPage() {
                     </ul>
                   </div>
                 )}
+                {travelTips.length > 0 && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h3 className="font-medium text-green-800 mb-2">💡 Travel Tips</h3>
+                    <ul className="text-sm text-green-700 space-y-1">
+                      {travelTips.map((tip, index) => (
+                        <li key={index}>• {tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="p-4 bg-blue-50 rounded-lg">
                   <h3 className="font-medium mb-1">Trip Summary</h3>
                   <div className="space-y-2">
@@ -1369,7 +1416,7 @@ export default function NewListPage() {
                   <div className="p-4 border rounded-lg">
                     <h3 className="font-medium mb-3">Weather-Based Recommendations</h3>
                     <div className="text-sm text-gray-600">
-                      {formData.destinations.some(d => d.weather && d.weather.max_temp <= settings.weather_sensitivity.cold_threshold) && (
+                      {formData.destinations.some(d => d.weather && d.weather.min_temp <= settings.weather_sensitivity.cold_threshold) && (
                         <div className="flex items-center gap-2 mb-2">
                           <Thermometer className="text-blue-500 w-4 h-4" />
                           <span>Pack warm clothing for cold weather.</span>
