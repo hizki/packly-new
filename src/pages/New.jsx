@@ -138,6 +138,27 @@ export default function NewListPage() {
     };
   }, [navigate]);
 
+  // Auto-scroll to top when step changes
+  useEffect(() => {
+    // Add a small delay to ensure the new step content is rendered
+    const timeoutId = setTimeout(() => {
+      // Find the main scroll container (the main element with overflow-auto)
+      const mainElement = document.querySelector('main[class*="overflow-auto"]');
+      
+      if (mainElement) {
+        // Scroll the main container
+        mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        // Fallback to window scroll
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [step]);
+
   useEffect(() => {
     if (step === 1) {
       // Add a small delay to ensure the component is fully mounted
