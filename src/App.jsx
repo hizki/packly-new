@@ -12,23 +12,45 @@ function App() {
   const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
-    checkAuthState()
+    // Don't check auth state immediately - let Supabase process URL hash first
+    let mounted = true
     
-    // Listen for auth state changes
+    // Listen for auth state changes first
     const { data: { subscription } } = User.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.email)
       
+      if (!mounted) return
+      
       if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user)
+        setLoading(false)
+        setAuthChecked(true)
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
+        setLoading(false)
+        setAuthChecked(true)
+      } else if (event === 'INITIAL_SESSION') {
+        // Handle initial session (including from URL hash)
+        if (session?.user) {
+          setUser(session.user)
+        } else {
+          setUser(null)
+        }
+        setLoading(false)
+        setAuthChecked(true)
       }
-      
-      setLoading(false)
-      setAuthChecked(true)
     })
 
+    // Delay initial auth check to allow Supabase to process URL hash
+    const timeoutId = setTimeout(() => {
+      if (mounted && !authChecked) {
+        checkAuthState()
+      }
+    }, 1000) // Wait 1 second for Supabase to process tokens
+
     return () => {
+      mounted = false
+      clearTimeout(timeoutId)
       subscription?.unsubscribe()
     }
   }, [])
