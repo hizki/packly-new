@@ -29,6 +29,9 @@ import { addDays } from 'date-fns';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { fetchWeatherForDate } from '@/services/weatherService';
+import { DateRange } from 'react-date-range';
+import 'react-date-range/dist/styles.css'; // main css file
+import 'react-date-range/dist/theme/default.css'; // theme css file
 
 export default function NewListPage() {
   const navigate = useNavigate();
@@ -579,15 +582,19 @@ export default function NewListPage() {
     }, 300);
   };
 
-  const handleDateChange = (index, field, date) => {
+  const handleDateRangeChange = (index, ranges) => {
+    const { startDate, endDate } = ranges.selection;
     const newDestinations = [...formData.destinations];
+    
     newDestinations[index] = {
       ...newDestinations[index],
-      [field]: date,
+      start_date: startDate,
+      end_date: endDate,
     };
 
-    if (field === 'end_date' && index < newDestinations.length - 1) {
-      const nextStartDate = new Date(date);
+    // Update subsequent destinations if this is not the last one
+    if (index < newDestinations.length - 1) {
+      const nextStartDate = new Date(endDate);
       const nextEndDate = addDays(nextStartDate, 7);
 
       newDestinations[index + 1] = {
@@ -1647,37 +1654,22 @@ export default function NewListPage() {
                           className="w-auto p-0"
                           align="start"
                         >
-                          <div className="p-3">
-                            <div className="space-y-2">
-                              <Label>From</Label>
-                              <Input
-                                type="date"
-                                value={format(destination.start_date, 'yyyy-MM-dd')}
-                                min={
-                                  index === 0
-                                    ? format(new Date(), 'yyyy-MM-dd')
-                                    : format(
-                                        formData.destinations[index - 1].end_date,
-                                        'yyyy-MM-dd',
-                                      )
-                                }
-                                onChange={e =>
-                                  handleDateChange(index, 'start_date', new Date(e.target.value))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2 mt-3">
-                              <Label>To</Label>
-                              <Input
-                                type="date"
-                                value={format(destination.end_date, 'yyyy-MM-dd')}
-                                min={format(destination.start_date, 'yyyy-MM-dd')}
-                                onChange={e =>
-                                  handleDateChange(index, 'end_date', new Date(e.target.value))
-                                }
-                              />
-                            </div>
-                          </div>
+                          <DateRange
+                            ranges={[{
+                              startDate: destination.start_date,
+                              endDate: destination.end_date,
+                              key: 'selection',
+                            }]}
+                            onChange={(ranges) => handleDateRangeChange(index, ranges)}
+                            minDate={
+                              index === 0
+                                ? new Date()
+                                : formData.destinations[index - 1].end_date
+                            }
+                            direction="horizontal"
+                            showDateDisplay={false}
+                            rangeColors={['#3b82f6']}
+                          />
                         </PopoverContent>
                       </Popover>
                     </div>
