@@ -28,6 +28,7 @@ import LottieSpinner from '../components/ui/lottie-spinner';
 import { addDays } from 'date-fns';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { fetchWeatherForDate } from '@/services/weatherService';
 
 export default function NewListPage() {
   const navigate = useNavigate();
@@ -47,7 +48,6 @@ export default function NewListPage() {
 
   const mapRef = useRef(null);
   const mapsApiKeyRef = useRef(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
-  const weatherApiKeyRef = useRef(import.meta.env.VITE_WEATHER_API_KEY);
   const inputRefs = useRef([]);
   const autocompleteRefs = useRef([]);
   const mapInstance = useRef(null);
@@ -458,10 +458,14 @@ export default function NewListPage() {
             map.setCenter(place.geometry.location);
             map.setZoom(12);
 
-            fetchWeatherForDestination(index, {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-            });
+            fetchWeatherForDestination(
+              index, 
+              {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+              },
+              newDestinations[index].start_date,
+            );
           });
         } catch (autocompleteError) {
           console.error('Error creating autocomplete for input', index, autocompleteError);
@@ -475,53 +479,22 @@ export default function NewListPage() {
     }
   };
 
-  const fetchWeatherForDestination = async (index, coordinates) => {
+  const fetchWeatherForDestination = async (index, coordinates, startDate = null) => {
     if (!coordinates) return;
 
     setWeatherLoading(prev => ({ ...prev, [index]: true }));
     try {
-      // Fetch both current weather (for general conditions) and forecast (for precipitation probability)
-      const [currentResponse, forecastResponse] = await Promise.all([
-        fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${coordinates.lat}&lon=${coordinates.lng}&units=metric&appid=${weatherApiKeyRef.current}`,
-        ),
-        fetch(
-          `https://api.openweathermap.org/data/2.5/forecast?lat=${coordinates.lat}&lon=${coordinates.lng}&units=metric&appid=${weatherApiKeyRef.current}`,
-        ),
-      ]);
+      const weather = await fetchWeatherForDate(
+        coordinates.lat,
+        coordinates.lng,
+        startDate || new Date(),
+      );
 
-      const currentData = await currentResponse.json();
-      const forecastData = await forecastResponse.json();
-
-      if (currentData && forecastData && forecastData.list && forecastData.list.length > 0) {
-        // Get current weather for general conditions
-        const currentWeather = currentData;
-        // Get the next forecast period for precipitation probability
-        const nextForecast = forecastData.list[0];
-
-        // Calculate rain chance category based on precipitation probability
-        const getRainChanceCategory = pop => {
-          if (pop === 0) return 'none';
-          if (pop <= 0.3) return 'slight'; // 0-30%
-          if (pop <= 0.7) return 'chance'; // 31-70%
-          return 'certain'; // 71-100%
-        };
-
-        const rainChance = getRainChanceCategory(nextForecast.pop || 0);
-
+      if (weather) {
         const newDestinations = [...formData.destinations];
         newDestinations[index] = {
           ...newDestinations[index],
-          weather: {
-            // Use current weather for general conditions and temperature
-            min_temp: Math.round(currentWeather.main.temp_min),
-            max_temp: Math.round(currentWeather.main.temp_max),
-            conditions: currentWeather.weather[0].main,
-            description: currentWeather.weather[0].description,
-            // Use forecast data for precipitation probability
-            precipitation_probability: Math.round((nextForecast.pop || 0) * 100),
-            rain_chance: rainChance,
-          },
+          weather,
         };
 
         setFormData(prev => ({
@@ -630,7 +603,11 @@ export default function NewListPage() {
     }));
 
     if (newDestinations[index].coordinates) {
-      fetchWeatherForDestination(index, newDestinations[index].coordinates);
+      fetchWeatherForDestination(
+        index, 
+        newDestinations[index].coordinates, 
+        newDestinations[index].start_date,
+      );
     }
   };
 
@@ -1706,13 +1683,20 @@ export default function NewListPage() {
                     </div>
 
                     {destination.weather && (
-                      <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                      <div className={`mt-2 p-3 rounded-lg ${
+                        destination.weather.isApproximate ? 'bg-amber-50 border border-amber-200' : 'bg-blue-50'
+                      }`}>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             {getWeatherIcon(destination.weather.conditions)}
                             <span className="text-sm font-medium">
                               {destination.weather.conditions}
                             </span>
+                            {destination.weather.isApproximate && (
+                              <span className="text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded">
+                                Estimate
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <Thermometer className="w-4 h-4 text-red-500" />
@@ -1727,7 +1711,9 @@ export default function NewListPage() {
                             destination.weather.rain_chance,
                             destination.weather.precipitation_probability,
                           ) && (
-                            <div className="flex items-center gap-1 pt-2 border-t border-blue-200">
+                            <div className={`flex items-center gap-1 pt-2 border-t ${
+                              destination.weather.isApproximate ? 'border-amber-200' : 'border-blue-200'
+                            }`}>
                               <span className="text-sm">
                                 {
                                   getRainChanceDisplay(
@@ -1750,6 +1736,18 @@ export default function NewListPage() {
                               </span>
                             </div>
                           )}
+                        {destination.weather.warning && (
+                          <div className="mt-2 p-2 bg-amber-100 border-l-4 border-amber-500 rounded">
+                            <p className="text-xs text-amber-800">
+                              ⚠️ {destination.weather.warning}
+                            </p>
+                          </div>
+                        )}
+                        {destination.weather.poweredBy && (
+                          <div className="mt-1 text-xs text-gray-500">
+                            {destination.weather.poweredBy}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1974,11 +1972,18 @@ export default function NewListPage() {
                           </p>
                         </div>
                         {destination.weather && (
-                          <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full text-sm">
+                          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+                            destination.weather.isApproximate 
+                              ? 'bg-amber-100 border border-amber-300' 
+                              : 'bg-white'
+                          }`}>
                             {getWeatherIcon(destination.weather.conditions)}
                             <span className="font-medium">
                               {destination.weather.min_temp}° - {destination.weather.max_temp}°C
                             </span>
+                            {destination.weather.isApproximate && (
+                              <span className="text-xs text-amber-700 font-semibold">~</span>
+                            )}
                             {destination.weather.rain_chance &&
                               destination.weather.rain_chance !== 'none' && (
                                 <span className="text-xs">
@@ -2061,6 +2066,24 @@ export default function NewListPage() {
                           </span>
                         </div>
                       )}
+                    </div>
+                    {/* Weather service disclaimers */}
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="space-y-1">
+                        {formData.destinations
+                          .filter(d => d.weather?.poweredBy)
+                          .reduce((unique, dest) => {
+                            if (!unique.find(u => u.poweredBy === dest.weather.poweredBy)) {
+                              unique.push(dest.weather);
+                            }
+                            return unique;
+                          }, [])
+                          .map((weather, index) => (
+                            <div key={index} className="text-xs text-gray-500">
+                              {weather.poweredBy}
+                            </div>
+                          ))}
+                      </div>
                     </div>
                   </div>
                 )}

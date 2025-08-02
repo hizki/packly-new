@@ -32,6 +32,11 @@ export interface Weather {
   description?: string;
   precipitation_probability?: number;
   rain_chance?: 'none' | 'slight' | 'chance' | 'certain';
+  isApproximate?: boolean;
+  source?: string;
+  poweredBy?: string;
+  warning?: string;
+  error?: string;
 }
 
 /** Geographic coordinates */
