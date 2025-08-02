@@ -68,6 +68,22 @@ const mockTipLists = [
   }
 ]
 
+const mockCustomLists = [
+  {
+    id: '1',
+    name: 'Beach Essentials',
+    list_type: 'activity',
+    category: 'beach',
+    icon: '🏖️',
+    owner_id: 'dev-user-123',
+    items: [
+      { name: 'Sunscreen', category: 'essentials', quantity: 1, weather_dependent: false, weather_type: 'any' },
+      { name: 'Beach towel', category: 'essentials', quantity: 1, weather_dependent: false, weather_type: 'any' }
+    ],
+    is_default: false
+  }
+]
+
 export class PackingListService {
   static async findMany(filters = {}) {
     if (isDev) {
@@ -228,6 +244,25 @@ export class BaseListService {
     return result
   }
 
+  static async delete(id) {
+    if (isDev) {
+      console.log('🚀 Development mode: Mock delete base list', id)
+      const index = mockBaseLists.findIndex(list => list.id === id)
+      if (index !== -1) {
+        mockBaseLists.splice(index, 1)
+      }
+      return true
+    }
+
+    const { error } = await supabase
+      .from('base_lists')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    return true
+  }
+
   // Compatibility aliases
   static async filter(filters) {
     return this.findMany(filters)
@@ -297,6 +332,25 @@ export class TipListService {
     return result
   }
 
+  static async delete(id) {
+    if (isDev) {
+      console.log('🚀 Development mode: Mock delete tip list', id)
+      const index = mockTipLists.findIndex(list => list.id === id)
+      if (index !== -1) {
+        mockTipLists.splice(index, 1)
+      }
+      return true
+    }
+
+    const { error } = await supabase
+      .from('tip_lists')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    return true
+  }
+
   // Compatibility aliases
   static async filter(filters) {
     return this.findMany(filters)
@@ -307,7 +361,12 @@ export class CustomListService {
   static async findMany(filters = {}) {
     if (isDev) {
       console.log('🚀 Development mode: Mock custom lists')
-      return []
+      return mockCustomLists.filter(list => {
+        if (filters.owner_id && list.owner_id !== filters.owner_id) return false
+        if (filters.list_type && list.list_type !== filters.list_type) return false
+        if (filters.category && list.category !== filters.category) return false
+        return true
+      })
     }
 
     let query = supabase.from('lists').select('*')
@@ -330,7 +389,14 @@ export class CustomListService {
   static async create(data) {
     if (isDev) {
       console.log('🚀 Development mode: Mock create custom list', data)
-      return { ...data, id: Date.now().toString() }
+      const newList = {
+        ...data,
+        id: Date.now().toString(),
+        created_date: new Date().toISOString(),
+        updated_date: new Date().toISOString()
+      }
+      mockCustomLists.push(newList)
+      return newList
     }
 
     const { data: result, error } = await supabase
@@ -346,7 +412,16 @@ export class CustomListService {
   static async update(id, data) {
     if (isDev) {
       console.log('🚀 Development mode: Mock update custom list', id, data)
-      return { id, ...data }
+      const index = mockCustomLists.findIndex(list => list.id === id)
+      if (index !== -1) {
+        mockCustomLists[index] = { 
+          ...mockCustomLists[index], 
+          ...data, 
+          updated_date: new Date().toISOString() 
+        }
+        return mockCustomLists[index]
+      }
+      throw new Error('Custom list not found')
     }
 
     const { data: result, error } = await supabase
@@ -363,7 +438,11 @@ export class CustomListService {
   static async delete(id) {
     if (isDev) {
       console.log('🚀 Development mode: Mock delete custom list', id)
-      return { id }
+      const index = mockCustomLists.findIndex(list => list.id === id)
+      if (index !== -1) {
+        mockCustomLists.splice(index, 1)
+      }
+      return true
     }
 
     const { data, error } = await supabase

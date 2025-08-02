@@ -74,7 +74,11 @@ export default function ListDetailPage() {
   const [currentDestinationIndex, setCurrentDestinationIndex] = useState(0);
   const [dayBeforeTips, setDayBeforeTips] = useState([]);
   const [beforeLeavingTips, setBeforeLeavingTips] = useState([]);
+  const [showTripDetails, setShowTripDetails] = useState(false);
+  const [editingTripName, setEditingTripName] = useState(false);
+  const [tempTripName, setTempTripName] = useState("");
   const categoryCompletionRef = useRef({});
+  const tripNameInputRef = useRef(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -91,11 +95,24 @@ export default function ListDetailPage() {
     loadData();
   }, []);
 
+  // Focus input when editing trip name
+  useEffect(() => {
+    if (editingTripName && tripNameInputRef.current) {
+      tripNameInputRef.current.focus();
+      tripNameInputRef.current.select();
+    }
+  }, [editingTripName]);
+
   // Escape key navigation
   useEffect(() => {
     const handleEscapeKey = (event) => {
       if (event.key === 'Escape') {
-        navigate(createPageUrl("Trips"));
+        if (editingTripName) {
+          setEditingTripName(false);
+          setTempTripName("");
+        } else {
+          navigate(createPageUrl("Trips"));
+        }
       }
     };
 
@@ -103,7 +120,7 @@ export default function ListDetailPage() {
     return () => {
       document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, [navigate]);
+  }, [navigate, editingTripName]);
 
   const loadTipLists = async () => {
     try {
@@ -291,6 +308,48 @@ export default function ListDetailPage() {
     setShowFlightDialog(true);
   };
 
+  const handleTripNameClick = () => {
+    const currentName = list?.name || (list?.destinations?.[0]?.location || "Trip");
+    setTempTripName(currentName);
+    setEditingTripName(true);
+  };
+
+  const handleTripNameSave = async () => {
+    if (!tempTripName.trim() || !list) {
+      setEditingTripName(false);
+      setTempTripName("");
+      return;
+    }
+
+    try {
+      await PackingList.update(list.id, { name: tempTripName.trim() });
+      setList({ ...list, name: tempTripName.trim() });
+      setEditingTripName(false);
+      setTempTripName("");
+      
+      toast({
+        title: "Trip name updated",
+        description: "Your trip name has been saved successfully"
+      });
+    } catch (error) {
+      console.error("Error updating trip name:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update trip name",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleTripNameKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleTripNameSave();
+    } else if (e.key === 'Escape') {
+      setEditingTripName(false);
+      setTempTripName("");
+    }
+  };
+
   const handleFlightSelected = async (flightDetails) => {
     if (!list) return;
     
@@ -335,9 +394,13 @@ export default function ListDetailPage() {
   const getDateRange = () => {
     if (!list) return { start: new Date(), end: new Date() };
     if (list.destinations && list.destinations.length > 0) {
+      // Calculate full trip span: start of first destination to end of last destination
+      const sortedDestinations = [...list.destinations].sort((a, b) => 
+        new Date(a.start_date) - new Date(b.start_date)
+      );
       return {
-        start: new Date(list.destinations[0].start_date),
-        end: new Date(list.destinations[0].end_date)
+        start: new Date(sortedDestinations[0].start_date),
+        end: new Date(sortedDestinations[sortedDestinations.length - 1].end_date)
       };
     }
     return {
@@ -459,14 +522,38 @@ export default function ListDetailPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold line-clamp-1">
-                {list?.name || (list?.destinations?.[0]?.location || "Trip")}
-              </h1>
+              {editingTripName ? (
+                <input
+                  ref={tripNameInputRef}
+                  value={tempTripName}
+                  onChange={(e) => setTempTripName(e.target.value)}
+                  onKeyDown={handleTripNameKeyDown}
+                  onBlur={handleTripNameSave}
+                  className="text-2xl font-bold cursor-pointer"
+                  style={{ 
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    padding: '0',
+                    margin: '0',
+                    width: `${Math.max(300, tempTripName.length * 14)}px`,
+                    maxWidth: '100vw'
+                  }}
+                />
+              ) : (
+                <h1 
+                  className="text-2xl font-bold line-clamp-1 cursor-pointer hover:text-blue-600 transition-colors"
+                  onClick={handleTripNameClick}
+                  title="Click to edit trip name"
+                >
+                  {list?.name || (list?.destinations?.[0]?.location || "Trip")}
+                </h1>
+              )}
               {list?.destinations?.[0] && (
                 <p className="text-gray-500">
                   {formatDateRange(
-                    list.destinations[0].start_date,
-                    list.destinations[0].end_date
+                    getDateRange().start,
+                    getDateRange().end
                   )}
                 </p>
               )}
@@ -502,116 +589,71 @@ export default function ListDetailPage() {
           </div>
         </div>
         
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {list.destinations ? (
-                list.destinations.map((destination, index) => (
+        {/* Trip Details Toggle Button */}
+        <div className="mb-4">
+          <Button
+            variant="outline"
+            onClick={() => setShowTripDetails(!showTripDetails)}
+            className="w-full justify-center"
+          >
+            {showTripDetails ? 'Hide Trip Details' : 'Show Trip Details'}
+          </Button>
+        </div>
+        
+        {/* Collapsible Trip Details Card */}
+        {showTripDetails && (
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {list.destinations ? (
+                  list.destinations.map((destination, index) => (
                   <div key={index} className="space-y-4">
                     <div className="flex justify-between items-center border-b pb-4 last:border-0 last:pb-0">
-                      <div>
+                      <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-gray-400" />
                           <h3 className="font-medium">{destination.location}</h3>
                         </div>
-                        <div className="space-y-2">
-                          <Label>Trip Dates</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className="w-full justify-start text-left font-normal"
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {destination.start_date ? (
-                                  <>
-                                    {format(new Date(destination.start_date), "MMM d, yyyy")}
-                                    {" — "}
-                                    {format(new Date(destination.end_date), "MMM d, yyyy")}
-                                  </>
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <div className="p-3">
-                                <div className="space-y-2">
-                                  <Label>From</Label>
-                                  <Input
-                                    type="date"
-                                    value={format(new Date(destination.start_date), "yyyy-MM-dd")}
-                                    onChange={(e) => {
-                                      const newDestinations = [...list.destinations];
-                                      newDestinations[index] = {
-                                        ...newDestinations[index],
-                                        start_date: new Date(e.target.value),
-                                      };
-                                      setList({
-                                        ...list,
-                                        destinations: newDestinations
-                                      });
-                                    }}
-                                  />
-                                </div>
-                                <div className="space-y-2 mt-3">
-                                  <Label>To</Label>
-                                  <Input
-                                    type="date"
-                                    value={format(new Date(destination.end_date), "yyyy-MM-dd")}
-                                    onChange={(e) => {
-                                      const newDestinations = [...list.destinations];
-                                      newDestinations[index] = {
-                                        ...newDestinations[index],
-                                        end_date: new Date(e.target.value),
-                                      };
-                                      setList({
-                                        ...list,
-                                        destinations: newDestinations
-                                      });
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            {destination.start_date && destination.end_date ? (
+                              <>
+                                {format(new Date(destination.start_date), "MMM d, yyyy")} — {format(new Date(destination.end_date), "MMM d, yyyy")}
+                              </>
+                            ) : (
+                              "Dates not set"
+                            )}
+                          </span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {destination.start_date && destination.end_date ? (
-                            <>
-                              {format(new Date(destination.start_date), "MMM d")} - {format(new Date(destination.end_date), "MMM d, yyyy")}
-                            </>
-                          ) : (
-                            "Dates not set"
-                          )}
-                        </p>
                       </div>
-                      {destination.weather && (
-                        <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full text-sm">
-                          {getWeatherIcon(destination.weather.conditions)}
-                          <span>{destination.weather.min_temp}° - {destination.weather.max_temp}°C</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {!destination.flight && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleAddFlightDetails(index)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Plane className="w-4 h-4 mr-2" />
+                            Add Flight Details
+                          </Button>
+                        )}
+                        {destination.weather && (
+                          <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full text-sm">
+                            {getWeatherIcon(destination.weather.conditions)}
+                            <span>{destination.weather.min_temp}° - {destination.weather.max_temp}°C</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
-                    {destination.flight ? (
+                    {destination.flight && (
                       <FlightDetailsCard 
                         flight={destination.flight}
                         destinationDate={destination.start_date}
                         onEditFlight={() => handleAddFlightDetails(index)}
                       />
-                    ) : (
-                      <div className="flex justify-center py-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleAddFlightDetails(index)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Plane className="w-4 h-4 mr-2" />
-                          Add Flight Details
-                        </Button>
-                      </div>
                     )}
                   </div>
                 ))
@@ -654,6 +696,7 @@ export default function ListDetailPage() {
             </div>
           </CardContent>
         </Card>
+        )}
         
         <div className="space-y-6">
           <div className="bg-white p-4 rounded-lg border shadow-sm">
