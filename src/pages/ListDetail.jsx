@@ -75,6 +75,12 @@ export default function ListDetailPage() {
   const [collapsedCategories, setCollapsedCategories] = useState(new Set());
   const categoryCompletionRef = useRef({});
   const tripNameInputRef = useRef(null);
+  
+  // Track pending items and implement proper debouncing with deduplication
+  const [pendingItemIds, setPendingItemIds] = useState(new Set());
+  const mutationBufferRef = useRef(new Map()); // itemIndex -> {newState, sequenceNumber}
+  const sequenceNumberRef = useRef(0);
+  const debounceTimeoutRef = useRef(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -115,7 +121,23 @@ export default function ListDetailPage() {
     return () => {
       document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, [navigate, editingTripName]);
+      }, [navigate, editingTripName]);
+
+  // Cleanup timeouts on unmount and flush pending mutations
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      // Attempt to flush any pending mutations before unmounting
+      // Note: In a production app, this should persist to localStorage for retry
+      if (mutationBufferRef.current.size > 0) {
+        console.warn('Component unmounting with pending mutations - consider persisting for retry');
+      }
+    };
+  }, []);
+
+
 
   const loadTipLists = async () => {
     try {
@@ -188,9 +210,16 @@ export default function ListDetailPage() {
     setCollapsedCategories(initialCollapsed);
   };
 
-  const toggleItemPacked = async (itemIndex) => {
+  // Optimistic toggle with proper buffering and sequence tracking
+  const toggleItemPacked = (itemIndex) => {
     if (!list) return;
     
+    const itemId = `${list.id}-${itemIndex}`;
+    
+    // Get current sequence number
+    const currentSequence = ++sequenceNumberRef.current;
+    
+    // Update UI immediately (optimistic)
     const updatedItems = [...list.items];
     const newPackedState = !updatedItems[itemIndex].is_packed;
     
@@ -199,19 +228,106 @@ export default function ListDetailPage() {
       is_packed: newPackedState
     };
     
-    const updatedList = {
+    setList({
       ...list,
       items: updatedItems
-    };
+    });
+    
+    // Add to mutation buffer (this handles deduplication automatically)
+    mutationBufferRef.current.set(itemIndex, {
+      newState: newPackedState,
+      sequenceNumber: currentSequence
+    });
+    
+    // Mark as pending
+    setPendingItemIds(prev => new Set([...prev, itemId]));
+    
+    // Check category completion immediately for UI feedback
+    checkCategoryCompletion(updatedItems, updatedItems[itemIndex].category);
+    
+    // Clear existing timeout and set new one
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    debounceTimeoutRef.current = setTimeout(() => {
+      flushMutationBuffer();
+    }, 300);
+  };
+  
+  // Flush buffered mutations with deduplication and sequence tracking
+  const flushMutationBuffer = async () => {
+    if (!list || mutationBufferRef.current.size === 0) return;
+    
+    // Get current buffer and clear it
+    const mutations = new Map(mutationBufferRef.current);
+    mutationBufferRef.current.clear();
     
     try {
-      await PackingList.update(list.id, { items: updatedItems });
-      setList(updatedList);
+      // Apply all mutations to current state
+      const updatedItems = [...list.items];
+      const affectedIndices = [];
+      
+      mutations.forEach((mutation, itemIndex) => {
+        if (updatedItems[itemIndex]) {
+          updatedItems[itemIndex] = {
+            ...updatedItems[itemIndex],
+            is_packed: mutation.newState
+          };
+          affectedIndices.push(itemIndex);
+        }
+      });
+      
+      // Make API call with sequence number for out-of-order detection
+      const requestSequence = Math.max(...Array.from(mutations.values()).map(m => m.sequenceNumber));
+      
+      await PackingList.update(list.id, { 
+        items: updatedItems,
+        clientSequence: requestSequence // Server should store and check this
+      });
+      
+      // Clear pending state for successful items
+      setPendingItemIds(prev => {
+        const newSet = new Set(prev);
+        affectedIndices.forEach(index => {
+          newSet.delete(`${list.id}-${index}`);
+        });
+        return newSet;
+      });
       
       // Check category completion on every toggle (both check and uncheck)
       checkCategoryCompletion(updatedItems, updatedItems[itemIndex].category);
     } catch (error) {
-      console.error("Error updating item:", error);
+      console.error("Error flushing mutations:", error);
+      
+      // Revert optimistic updates for failed items
+      setList(currentList => {
+        const revertedItems = [...currentList.items];
+        mutations.forEach((mutation, itemIndex) => {
+          if (revertedItems[itemIndex]) {
+            revertedItems[itemIndex] = {
+              ...revertedItems[itemIndex],
+              is_packed: !mutation.newState // Revert
+            };
+          }
+        });
+        return { ...currentList, items: revertedItems };
+      });
+      
+      // Clear pending state
+      setPendingItemIds(prev => {
+        const newSet = new Set(prev);
+        Array.from(mutations.keys()).forEach(index => {
+          newSet.delete(`${list.id}-${index}`);
+        });
+        return newSet;
+      });
+      
+      toast({
+        title: "Error",
+        description: "Failed to update items. Changes reverted.",
+        variant: "destructive"
+      });
     }
   };
   

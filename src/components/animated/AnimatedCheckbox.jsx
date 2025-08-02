@@ -26,6 +26,37 @@ const AnimatedCheckbox = ({ checked, onChange, id, className }) => {
     }
   };
 
+  // Unified pointer events for accessibility and performance
+  const handlePointerDown = (e) => {
+    if (disabled) return;
+    e.preventDefault();
+    setIsPressed(true);
+  };
+
+  const handlePointerUp = (e) => {
+    if (disabled) return;
+    e.preventDefault();
+    setIsPressed(false);
+    handleToggle();
+  };
+
+  const handleKeyDown = (e) => {
+    if (disabled) return;
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      setIsPressed(true);
+    }
+  };
+
+  const handleKeyUp = (e) => {
+    if (disabled) return;
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      setIsPressed(false);
+      handleToggle();
+    }
+  };
+
   // Draw animation for checkmark
   const checkVariants = {
     initial: { pathLength: 0, opacity: 0 },
@@ -49,13 +80,21 @@ const AnimatedCheckbox = ({ checked, onChange, id, className }) => {
 
   return (
     <motion.div
+      role="checkbox"
+      aria-checked={isChecked}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
       className={cn(
-        "relative w-5 h-5 border-2 rounded-md flex items-center justify-center cursor-pointer",
+        "relative w-5 h-5 border-2 rounded-md flex items-center justify-center select-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
+        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
         isChecked ? "border-blue-500 bg-blue-500" : "border-gray-300 bg-white",
         className
       )}
-      onClick={handleToggle}
-      whileTap={{ scale: 0.9 }}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onKeyDown={handleKeyDown}
+      onKeyUp={handleKeyUp}
+      whileTap={disabled ? {} : { scale: 0.9 }}
       animate={{ 
         backgroundColor: isChecked ? "#3b82f6" : "#ffffff",
         borderColor: isChecked ? "#3b82f6" : "#d1d5db",
