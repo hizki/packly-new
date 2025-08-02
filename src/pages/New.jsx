@@ -478,19 +478,43 @@ export default function NewListPage() {
 
     setWeatherLoading(prev => ({ ...prev, [index]: true }));
     try {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${coordinates.lat}&lon=${coordinates.lng}&units=metric&appid=${weatherApiKeyRef.current}`
-      );
-      const data = await response.json();
+      // Fetch both current weather (for general conditions) and forecast (for precipitation probability)
+      const [currentResponse, forecastResponse] = await Promise.all([
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${coordinates.lat}&lon=${coordinates.lng}&units=metric&appid=${weatherApiKeyRef.current}`),
+        fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${coordinates.lat}&lon=${coordinates.lng}&units=metric&appid=${weatherApiKeyRef.current}`)
+      ]);
       
-      if (data) {
+      const currentData = await currentResponse.json();
+      const forecastData = await forecastResponse.json();
+      
+      if (currentData && forecastData && forecastData.list && forecastData.list.length > 0) {
+        // Get current weather for general conditions
+        const currentWeather = currentData;
+        // Get the next forecast period for precipitation probability
+        const nextForecast = forecastData.list[0];
+        
+        // Calculate rain chance category based on precipitation probability
+        const getRainChanceCategory = (pop) => {
+          if (pop === 0) return 'none';
+          if (pop <= 0.3) return 'slight';  // 0-30%
+          if (pop <= 0.7) return 'chance';  // 31-70%
+          return 'certain';                 // 71-100%
+        };
+
+        const rainChance = getRainChanceCategory(nextForecast.pop || 0);
+        
         const newDestinations = [...formData.destinations];
         newDestinations[index] = {
           ...newDestinations[index],
           weather: {
-            min_temp: Math.round(data.main.temp_min),
-            max_temp: Math.round(data.main.temp_max),
-            conditions: data.weather[0].main
+            // Use current weather for general conditions and temperature
+            min_temp: Math.round(currentWeather.main.temp_min),
+            max_temp: Math.round(currentWeather.main.temp_max),
+            conditions: currentWeather.weather[0].main,
+            description: currentWeather.weather[0].description,
+            // Use forecast data for precipitation probability
+            precipitation_probability: Math.round((nextForecast.pop || 0) * 100),
+            rain_chance: rainChance
           }
         };
         
@@ -915,6 +939,34 @@ export default function NewListPage() {
           );
         }
 
+        // Rain gear based on precipitation probability
+        const rainItems = [];
+        const hasRainData = weatherData.some(w => w.rain_chance);
+        if (hasRainData) {
+          const rainChances = weatherData.map(w => w.rain_chance).filter(Boolean);
+          const maxRainChance = rainChances.includes('certain') ? 'certain' 
+                              : rainChances.includes('chance') ? 'chance'
+                              : rainChances.includes('slight') ? 'slight' : 'none';
+          
+          if (maxRainChance === 'certain') {
+            rainItems.push(
+              { name: "Waterproof Jacket", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
+              { name: "Waterproof Pants", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
+              { name: "Umbrella", category: "essentials", quantity: 1, is_packed: false, weather_dependent: true },
+              { name: "Waterproof Shoes/Boots", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true }
+            );
+          } else if (maxRainChance === 'chance') {
+            rainItems.push(
+              { name: "Rain Jacket", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true },
+              { name: "Umbrella", category: "essentials", quantity: 1, is_packed: false, weather_dependent: true }
+            );
+          } else if (maxRainChance === 'slight') {
+            rainItems.push(
+              { name: "Light Rain Jacket", category: "clothing", quantity: 1, is_packed: false, weather_dependent: true }
+            );
+          }
+        }
+
         // Accommodation-specific items
         const accommodationItems = [];
         if (accommodation === 'camping' || accommodation === 'glamping') {
@@ -939,6 +991,7 @@ export default function NewListPage() {
           ...essentialItems,
           ...weatherItems,
           ...activityItems,
+          ...rainItems,
           ...accommodationItems
         ];
 
@@ -1044,19 +1097,36 @@ export default function NewListPage() {
   };
 
   const getWeatherIcon = (conditions) => {
-    if (!conditions) return <Cloud className="w-5 h-5 text-gray-400" />;
-    
-    switch (conditions.toLowerCase()) {
+    switch (conditions?.toLowerCase()) {
+      case 'thunderstorm':
+        return <Cloud className="w-5 h-5 text-gray-600" />;
+      case 'drizzle':
+        return <CloudRain className="w-5 h-5 text-blue-400" />;
+      case 'rain':
+        return <CloudRain className="w-5 h-5 text-blue-500" />;
+      case 'snow':
+        return <Cloud className="w-5 h-5 text-blue-200" />;
+      case 'clouds':
+        return <Cloud className="w-5 h-5 text-gray-500" />;
       case 'clear':
         return <Sun className="w-5 h-5 text-yellow-500" />;
-      case 'clouds':
-        return <Cloud className="w-5 h-5 text-gray-400" />;
-      case 'rain':
-      case 'drizzle':
-        return <CloudRain className="w-5 h-5 text-blue-500" />;
       default:
-        return <Cloud className="w-5 h-5 text-gray-400" />;
+        return <Sun className="w-5 h-5 text-yellow-500" />;
     }
+  };
+
+  const getRainChanceDisplay = (rainChance, precipProbability) => {
+    const rainChanceConfig = {
+      slight: { label: 'Slight Chance', color: 'text-yellow-600', icon: '🌦️' },
+      chance: { label: 'Good Chance', color: 'text-orange-600', icon: '🌧️' },
+      certain: { label: 'Certain', color: 'text-red-600', icon: '☔️' }
+    };
+    
+    const config = rainChanceConfig[rainChance];
+    return config ? {
+      ...config,
+      percentage: precipProbability || 0
+    } : null;
   };
 
   if (isProcessing) {
@@ -1235,17 +1305,27 @@ export default function NewListPage() {
                     </div>
 
                     {destination.weather && (
-                      <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getWeatherIcon(destination.weather.conditions)}
-                          <span className="text-sm font-medium">{destination.weather.conditions}</span>
+                      <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {getWeatherIcon(destination.weather.conditions)}
+                            <span className="text-sm font-medium">{destination.weather.conditions}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Thermometer className="w-4 h-4 text-red-500" />
+                            <span className="text-sm">
+                              {destination.weather.min_temp}°C - {destination.weather.max_temp}°C
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Thermometer className="w-4 h-4 text-red-500" />
-                          <span className="text-sm">
-                            {destination.weather.min_temp}°C - {destination.weather.max_temp}°C
-                          </span>
-                        </div>
+                        {destination.weather.rain_chance && destination.weather.rain_chance !== 'none' && getRainChanceDisplay(destination.weather.rain_chance, destination.weather.precipitation_probability) && (
+                          <div className="flex items-center gap-1 pt-2 border-t border-blue-200">
+                            <span className="text-sm">{getRainChanceDisplay(destination.weather.rain_chance, destination.weather.precipitation_probability).icon}</span>
+                            <span className={`text-sm font-medium ${getRainChanceDisplay(destination.weather.rain_chance, destination.weather.precipitation_probability).color}`}>
+                              Rain: {getRainChanceDisplay(destination.weather.rain_chance, destination.weather.precipitation_probability).label} ({destination.weather.precipitation_probability}%)
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1465,7 +1545,12 @@ export default function NewListPage() {
                         {destination.weather && (
                           <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full text-sm">
                             {getWeatherIcon(destination.weather.conditions)}
-                            <span>{destination.weather.min_temp}° - {destination.weather.max_temp}°C</span>
+                            <span className="font-medium">{destination.weather.min_temp}° - {destination.weather.max_temp}°C</span>
+                            {destination.weather.rain_chance && destination.weather.rain_chance !== 'none' && (
+                              <span className="text-xs">
+                                {getRainChanceDisplay(destination.weather.rain_chance, destination.weather.precipitation_probability)?.icon || ''}
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1505,10 +1590,17 @@ export default function NewListPage() {
                           <span>Pack light, breathable clothing for hot weather.</span>
                         </div>
                       )}
-                      {formData.destinations.some(d => d.weather && d.weather.conditions.toLowerCase().includes('rain')) && (
+                      {formData.destinations.some(d => d.weather && d.weather.rain_chance && d.weather.rain_chance !== 'none') && (
                         <div className="flex items-center gap-2">
                           <CloudRain className="text-blue-500 w-4 h-4" />
-                          <span>Don&apos;t forget rain gear!</span>
+                          <span>
+                            {formData.destinations.some(d => d.weather && d.weather.rain_chance === 'certain') 
+                              ? "Rain is very likely - pack waterproof gear!" 
+                              : formData.destinations.some(d => d.weather && d.weather.rain_chance === 'chance')
+                                ? "Good chance of rain - consider bringing rain gear."
+                                : "Slight chance of rain - might want to pack a light jacket."
+                            }
+                          </span>
                         </div>
                       )}
                     </div>
