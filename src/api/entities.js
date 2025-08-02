@@ -88,13 +88,18 @@ export class PackingListService {
   static async findMany(filters = {}) {
     if (isDev) {
       console.log('🚀 Development mode: Mock packing lists')
-      return mockPackingLists.filter(list => 
-        !filters.owner_id || list.owner_id === filters.owner_id
-      )
+      return mockPackingLists.filter(list => {
+        if (filters.id && list.id !== filters.id) return false
+        if (filters.owner_id && list.owner_id !== filters.owner_id) return false
+        return true
+      })
     }
 
     let query = supabase.from('packing_lists').select('*')
     
+    if (filters.id) {
+      query = query.eq('id', filters.id)
+    }
     if (filters.owner_id) {
       query = query.eq('owner_id', filters.owner_id)
     }
