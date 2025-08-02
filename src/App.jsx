@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import Pages from "@/pages/index.jsx"
 import LoginPage from "@/components/auth/LoginPage.jsx"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/sonner"
 import { User } from "@/api/auth"
 import LottieSpinner from "@/components/ui/lottie-spinner"
 
