@@ -2,12 +2,17 @@
 import { useState, useEffect, useRef } from "react";
 import { PackingList } from "@/api/entities";
 import { User } from "@/api/entities";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CalendarIcon, MapPin, Check, Loader2, Cloud, Thermometer, Sun, CloudRain, XCircle, Plus, Pencil } from "lucide-react";
+import { CalendarIcon, MapPin, Check, Loader2, Cloud, Thermometer, Sun, CloudRain, XCircle, Plus, Pencil, ChevronLeft, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -969,6 +974,31 @@ export default function NewListPage() {
     }
   };
 
+  // Helper functions for floating next button
+  const getNextButtonText = () => {
+    if (step === 1) return "Next";
+    if (step === 2) return isProcessing ? "Generating..." : "Generate List";
+    if (step === 3) return isProcessing ? "Saving..." : "Save Trip";
+    return "Next";
+  };
+
+  const canProceedToNext = () => {
+    if (step === 1) return hasValidDestination;
+    if (step === 2) return true; // Let validation happen in the handler
+    if (step === 3) return true;
+    return false;
+  };
+
+  const handleFloatingNext = () => {
+    if (step === 1) {
+      setStep(2);
+    } else if (step === 2) {
+      handleStep2Next();
+    } else if (step === 3) {
+      saveList();
+    }
+  };
+
   const getWeatherIcon = (conditions) => {
     if (!conditions) return <Cloud className="w-5 h-5 text-gray-400" />;
     
@@ -998,8 +1028,22 @@ export default function NewListPage() {
     <div className="p-6 pb-24">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold">Create a New Trip</h1>
-          <p className="text-gray-500">Let us help you prepare for your journey</p>
+          <div className="flex items-center gap-3 mb-2">
+            <button
+              onClick={() => {
+                if (step === 1) {
+                  navigate(createPageUrl("Home"));
+                } else {
+                  setStep(step - 1);
+                }
+              }}
+              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-600" />
+            </button>
+            <h1 className="text-2xl font-bold">Create a New Trip</h1>
+          </div>
+          <p className="text-gray-500 ml-11">Let us help you prepare for your journey</p>
         </div>
 
         <div className="flex justify-between mb-8">
@@ -1165,15 +1209,6 @@ export default function NewListPage() {
                 Add Another Destination
               </Button>
             </CardContent>
-            <CardFooter className="justify-end">
-              <Button 
-                onClick={() => setStep(2)}
-                disabled={!hasValidDestination}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Next
-              </Button>
-            </CardFooter>
           </Card>
         )}
 
@@ -1294,28 +1329,6 @@ export default function NewListPage() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="justify-between">
-              <Button 
-                variant="outline" 
-                onClick={() => setStep(1)}
-              >
-                Back
-              </Button>
-              <Button 
-                onClick={handleStep2Next}
-                disabled={isProcessing}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating List...
-                  </>
-                ) : (
-                  "Generate Packing List"
-                )}
-              </Button>
-            </CardFooter>
           </Card>
         )}
 
@@ -1481,29 +1494,27 @@ export default function NewListPage() {
                 })}
               </div>
             </CardContent>
-            <CardFooter className="justify-between">
-              <Button 
-                variant="outline" 
-                onClick={() => setStep(2)}
-              >
-                Back
-              </Button>
-              <Button 
-                onClick={saveList}
-                disabled={isProcessing}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Trip"
-                )}
-              </Button>
-            </CardFooter>
           </Card>
+        )}
+      </div>
+
+      {/* Floating Next Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={handleFloatingNext}
+          disabled={!canProceedToNext() || isProcessing}
+          className="h-14 w-14 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-full flex items-center justify-center shadow-lg transition-all duration-200 group"
+        >
+          {isProcessing ? (
+            <Loader2 className="w-6 h-6 text-white animate-spin" />
+          ) : (
+            <ArrowRight className="w-6 h-6 text-white group-hover:translate-x-0.5 transition-transform" />
+          )}
+        </button>
+        {!isProcessing && (
+          <div className="absolute -top-10 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            {getNextButtonText()}
+          </div>
         )}
       </div>
     </div>
