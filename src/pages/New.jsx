@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CalendarIcon, MapPin, Check, Loader2, Cloud, Thermometer, Sun, CloudRain, XCircle, Plus, Pencil, ChevronLeft, ArrowRight } from "lucide-react";
+import { CalendarIcon, MapPin, Check, Loader2, Cloud, Thermometer, Sun, CloudRain, XCircle, Plus, Pencil, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -320,9 +320,47 @@ export default function NewListPage() {
           streetViewControl: false,     // Remove street view yellow person icon
           rotateControl: false,         // Remove camera rotation controls
           tiltControl: false,           // Remove camera tilt controls
+          gestureHandling: 'greedy',    // Disable gesture-based camera controls
+          disableDefaultUI: false,      // Keep some default UI but selectively disable
           fullscreenControl: true,      // Keep fullscreen control
-          zoomControl: true            // Keep zoom controls
+          zoomControl: true,           // Keep zoom controls
+          keyboardShortcuts: false,     // Disable keyboard camera controls
+          clickableIcons: false,        // Disable clickable POI icons that can trigger camera
+          restriction: {
+            latLngBounds: {
+              north: 85,
+              south: -85,
+              west: -180,
+              east: 180
+            },
+            strictBounds: false
+          },
+          minZoom: 1,
+          maxZoom: 18
         });
+
+        // Force hide camera controls with CSS after map loads
+        setTimeout(() => {
+          const style = document.createElement('style');
+          style.textContent = `
+            .gmp-internal-camera-control,
+            [data-value="tilt"],
+            [data-value="rotate"],
+            .gmnoprint[title="Rotate map 90 degrees"],
+            .gmnoprint[title="Tilt map"],
+            .gmnoprint[title="Rotate map"],
+            button[title*="camera"],
+            button[title*="Camera"],
+            button[title*="rotate"],
+            button[title*="Rotate"],
+            button[title*="tilt"],
+            button[title*="Tilt"] {
+              display: none !important;
+              visibility: hidden !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }, 100);
         
         mapInstance.current = map;
         
@@ -1045,37 +1083,57 @@ export default function NewListPage() {
               }}
               className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ArrowRight className="w-5 h-5 text-gray-600 rotate-180" />
             </button>
             <h1 className="text-2xl font-bold">Create a New Trip</h1>
           </div>
           <p className="text-gray-500 ml-11">Let us help you prepare for your journey</p>
         </div>
 
-        <div className="flex justify-between mb-8">
-          <div className="flex flex-col items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? "bg-blue-600 text-white" : "bg-gray-200"}`}>
-              1
+        <div className="mb-8">
+          <div className="relative max-w-md mx-auto">
+            {/* Progress Line Background */}
+            <div className="absolute top-4 left-8 right-8 h-0.5 bg-gray-200"></div>
+            
+            {/* Active Progress Line */}
+            <div className="absolute top-4 left-8 h-0.5 bg-blue-600 transition-all duration-300" 
+                 style={{ 
+                   width: step === 1 ? '0%' : step === 2 ? 'calc(50% - 2rem)' : 'calc(100% - 4rem)'
+                 }}>
             </div>
-            <span className="text-xs mt-1">Destinations</span>
-          </div>
-          <div className="flex-1 flex items-center justify-center">
-            <div className={`h-1 w-full ${step >= 2 ? "bg-blue-600" : "bg-gray-200"}`}></div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? "bg-blue-600 text-white" : "bg-gray-200"}`}>
-              2
+
+            {/* Steps */}
+            <div className="relative flex justify-between items-center">
+              {/* Step 1 */}
+              <div className="flex flex-col items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
+                  step >= 1 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
+                }`}>
+                  1
+                </div>
+                <span className="text-xs mt-2 font-medium text-gray-600">Destinations</span>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex flex-col items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
+                  step >= 2 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
+                }`}>
+                  2
+                </div>
+                <span className="text-xs mt-2 font-medium text-gray-600">Details</span>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex flex-col items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
+                  step >= 3 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
+                }`}>
+                  3
+                </div>
+                <span className="text-xs mt-2 font-medium text-gray-600">Review</span>
+              </div>
             </div>
-            <span className="text-xs mt-1">Details</span>
-          </div>
-          <div className="flex-1 flex items-center justify-center">
-            <div className={`h-1 w-full ${step >= 3 ? "bg-blue-600" : "bg-gray-200"}`}></div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? "bg-blue-600 text-white" : "bg-gray-200"}`}>
-              3
-            </div>
-            <span className="text-xs mt-1">Review</span>
           </div>
         </div>
 
