@@ -45,13 +45,13 @@ print_status "🚀 Starting Packly Development Environment..."
 # Check if Node.js is installed
 if ! command_exists node; then
     print_error "Node.js is not installed!"
-    print_error "Please install Node.js 24.0.0 or higher from https://nodejs.org/"
-    print_error "Or use nvm: 'nvm install 24.4.1 && nvm use 24.4.1'"
+    print_error "Please install Node.js 22.0.0 or higher from https://nodejs.org/"
+    print_error "Or use nvm: 'nvm install 22 && nvm use 22'"
     exit 1
 fi
 
 # Check Node.js version
-REQUIRED_NODE_VERSION="24.0.0"
+REQUIRED_NODE_VERSION="22.0.0"
 CURRENT_NODE_VERSION=$(node --version | sed 's/v//')
 
 if ! version_ge "$CURRENT_NODE_VERSION" "$REQUIRED_NODE_VERSION"; then
