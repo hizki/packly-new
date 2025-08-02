@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PackingList } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,26 +21,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { format, differenceInDays } from "date-fns";
 import {
   ArrowLeft,
   CloudRain,
-  Thermometer,
   Sun,
   Cloud,
   Star,
   MapPin,
   Plus,
   Edit,
-  Trash2,
   Save,
   Plane,
-  CalendarIcon
+  CalendarIcon,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -59,7 +54,7 @@ export default function ListDetailPage() {
   const navigate = useNavigate();
   const [list, setList] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [listId, setListId] = useState("");
+
   const [isEditMode, setIsEditMode] = useState(false);
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
   const [newItem, setNewItem] = useState({
@@ -77,6 +72,7 @@ export default function ListDetailPage() {
   const [showTripDetails, setShowTripDetails] = useState(false);
   const [editingTripName, setEditingTripName] = useState(false);
   const [tempTripName, setTempTripName] = useState("");
+  const [collapsedCategories, setCollapsedCategories] = useState(new Set());
   const categoryCompletionRef = useRef({});
   const tripNameInputRef = useRef(null);
 
@@ -86,7 +82,6 @@ export default function ListDetailPage() {
       const id = params.get('id');
       
       if (id) {
-        setListId(id);
         await loadList(id);
       }
       await loadTipLists();
@@ -156,6 +151,8 @@ export default function ListDetailPage() {
         }
         
         setList(list);
+        // Initialize collapsed state for complete categories
+        initializeCollapsedState(list);
       } else {
         throw new Error("List not found");
       }
@@ -169,6 +166,26 @@ export default function ListDetailPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const initializeCollapsedState = (list) => {
+    if (!list.items) return;
+    
+    const categories = ["clothing", "toiletries", "tech", "gear", "essentials", "additional"];
+    const initialCollapsed = new Set();
+    
+    categories.forEach(category => {
+      const categoryItems = list.items.filter(item => item.category === category);
+      const isComplete = categoryItems.length > 0 && categoryItems.every(item => item.is_packed);
+      
+      if (isComplete) {
+        initialCollapsed.add(category);
+      }
+      
+      categoryCompletionRef.current[category] = isComplete;
+    });
+    
+    setCollapsedCategories(initialCollapsed);
   };
 
   const toggleItemPacked = async (itemIndex) => {
@@ -191,9 +208,8 @@ export default function ListDetailPage() {
       await PackingList.update(list.id, { items: updatedItems });
       setList(updatedList);
       
-      if (newPackedState) {
-        checkCategoryCompletion(updatedItems, updatedItems[itemIndex].category);
-      }
+      // Check category completion on every toggle (both check and uncheck)
+      checkCategoryCompletion(updatedItems, updatedItems[itemIndex].category);
     } catch (error) {
       console.error("Error updating item:", error);
     }
@@ -203,9 +219,21 @@ export default function ListDetailPage() {
     const categoryItems = items.filter(item => item.category === category);
     const allPacked = categoryItems.length > 0 && categoryItems.every(item => item.is_packed);
     
-    if (allPacked && categoryItems.length > 1 && !categoryCompletionRef.current[category]) {
+    if (allPacked && categoryItems.length > 0 && !categoryCompletionRef.current[category]) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2000);
+      
+      // Auto-collapse the completed category
+      setCollapsedCategories(prev => new Set([...prev, category]));
+    }
+    
+    // If category becomes incomplete, auto-expand it
+    if (!allPacked && categoryCompletionRef.current[category]) {
+      setCollapsedCategories(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(category);
+        return newSet;
+      });
     }
     
     categoryCompletionRef.current[category] = allPacked;
@@ -382,14 +410,7 @@ export default function ListDetailPage() {
     }
   };
 
-  const getListName = () => {
-    if (!list) return "";
-    if (list.name) return list.name;
-    if (list.destinations && list.destinations.length > 0) {
-      return list.destinations[0].location;
-    }
-    return list.destination || "Unnamed Trip";
-  };
+
 
   const getDateRange = () => {
     if (!list) return { start: new Date(), end: new Date() };
@@ -439,18 +460,7 @@ export default function ListDetailPage() {
     }
   };
   
-  const handleDateRangeChange = (index, date) => {
-    const newDestinations = [...list.destinations];
-    newDestinations[index] = {
-      ...newDestinations[index],
-      start_date: date,
-    };
-    
-    setList({
-      ...list,
-      destinations: newDestinations
-    });
-  };
+
 
   const renderTipLists = () => {
     if (!list || !list.destinations || list.destinations.length === 0) return null;
@@ -485,6 +495,24 @@ export default function ListDetailPage() {
     const start = format(new Date(startDate), "MMM d");
     const end = format(new Date(endDate), "MMM d, yyyy");
     return `${start} - ${end}`;
+  };
+
+  const toggleCategoryCollapse = (category) => {
+    setCollapsedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
+
+  const isCategoryComplete = (category) => {
+    if (!list.items) return false;
+    const categoryItems = list.items.filter(item => item.category === category);
+    return categoryItems.length > 0 && categoryItems.every(item => item.is_packed);
   };
 
   if (loading) {
@@ -794,36 +822,54 @@ export default function ListDetailPage() {
             const categoryItems = list.items ? list.items.filter(item => item.category === category) : [];
             if (categoryItems.length === 0) return null;
             
-            return (
-              <Card key={category}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg capitalize">{category}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="divide-y">
-                    <AnimatePresence>
-                      {categoryItems.map((item, index) => {
-                        const itemIndex = list.items.findIndex(i => i === item);
-                        return (
-                          <motion.div 
-                            key={index}
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, height: 0 }}
-                          >
-                            <AnimatedListItem
-                              item={item}
-                              onToggle={() => toggleItemPacked(itemIndex)}
-                              onUpdateQuantity={(quantity) => handleUpdateItemQuantity(itemIndex, quantity)}
-                              onDelete={isEditMode ? () => handleRemoveItem(itemIndex) : undefined}
-                              isEditMode={isEditMode}
-                            />
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
-                  </div>
-                </CardContent>
+            const isComplete = isCategoryComplete(category);
+            const isCollapsed = collapsedCategories.has(category);
+
+                          return (
+                <Card key={category}>
+                                    <CardHeader className="pb-2 pt-2">
+                    <div 
+                      className="flex items-center justify-between cursor-pointer hover:bg-gray-50 rounded-md p-1 -m-1"
+                      onClick={() => toggleCategoryCollapse(category)}
+                    >
+                      <CardTitle className="text-lg capitalize flex items-center">
+                        {category}
+                        {isComplete && (
+                          <span className="ml-2 text-green-500 text-xs"> (Complete)</span>
+                        )}
+                      </CardTitle>
+                      <div className="text-gray-500">
+                        {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </div>
+                    </div>
+                  </CardHeader>
+                {!isCollapsed && (
+                  <CardContent className="pt-0">
+                    <div className="divide-y">
+                      <AnimatePresence>
+                        {categoryItems.map((item, index) => {
+                          const itemIndex = list.items.findIndex(i => i === item);
+                          return (
+                            <motion.div 
+                              key={index}
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, height: 0 }}
+                            >
+                              <AnimatedListItem
+                                item={item}
+                                onToggle={() => toggleItemPacked(itemIndex)}
+                                onUpdateQuantity={(quantity) => handleUpdateItemQuantity(itemIndex, quantity)}
+                                onDelete={isEditMode ? () => handleRemoveItem(itemIndex) : undefined}
+                                isEditMode={isEditMode}
+                              />
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                  </CardContent>
+                )}
               </Card>
             );
           })}
