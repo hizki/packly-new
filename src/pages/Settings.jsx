@@ -6,7 +6,8 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { Bell, Sun, Thermometer, Loader2, LogOut } from 'lucide-react';
+import { Bell, Sun, Thermometer, LogOut } from 'lucide-react';
+import LottieSpinner from '@/components/ui/lottie-spinner';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import DeleteAccountDialog from '../components/settings/DeleteAccountDialog';
@@ -151,10 +152,10 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-6">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p>Loading your settings...</p>
-        </div>
+        <LottieSpinner
+          size={120}
+          color="#3b82f6"
+        />
       </div>
     );
   }
