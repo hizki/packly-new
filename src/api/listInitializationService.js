@@ -26,7 +26,7 @@ export class ListInitializationService {
         const customListData = {
           list_type: listData.list_type,
           list_name: listData.list_name,
-          name: `${listData.display_name} Essentials`,
+          name: listData.display_name,
           icon: listData.icon,
           items: listData.items,
           owner_id: listData.owner_id,
@@ -116,7 +116,7 @@ export class ListInitializationService {
         const customListData = {
           list_type: listData.list_type,
           list_name: listData.list_name,
-          name: `${listData.display_name} Essentials`,
+          name: listData.display_name,
           icon: listData.icon,
           items: listData.items,
           owner_id: listData.owner_id,

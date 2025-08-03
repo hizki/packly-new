@@ -1,79 +1,76 @@
 /**
- * Default list data for new users
- * Comprehensive packing suggestions based on activity, accommodation, and companion types
+ * Default activity packing lists
  */
-
-// Activity-based packing lists
 export const DEFAULT_ACTIVITY_LISTS = {
-  beach: {
+  'Beach Trip': {
     list_type: 'activity',
-    display_name: 'Beach Trip',
     icon: '🏖️',
     items: [
-      { name: 'Sunscreen (SPF 30+)', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Beach towel', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Swimsuit/Bikini', category: 'clothing', quantity: 2, weather_dependent: false },
+      { name: 'Swimsuit', category: 'clothing', quantity: 2, weather_dependent: false },
+      { name: 'Beach towel', category: 'essentials', quantity: 2, weather_dependent: false },
+      { name: 'Sunscreen', category: 'toiletries', quantity: 1, weather_dependent: false },
       { name: 'Sunglasses', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Beach hat/cap', category: 'clothing', quantity: 1, weather_dependent: false },
+      { name: 'Sun hat', category: 'clothing', quantity: 1, weather_dependent: false },
       { name: 'Flip flops/sandals', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Beach bag', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Water bottle', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Beach bag', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Waterproof phone case', category: 'tech', quantity: 1, weather_dependent: false },
       { name: 'Beach umbrella', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Snorkeling gear', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Beach volleyball', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Aloe vera gel', category: 'toiletries', quantity: 1, weather_dependent: false },
+      { name: 'Snorkel gear', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Beach volleyball/frisbee', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Cooler with drinks', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Aloe vera (sunburn relief)', category: 'toiletries', quantity: 1, weather_dependent: false },
+      { name: 'Water shoes', category: 'clothing', quantity: 1, weather_dependent: false },
     ],
   },
-  camping: {
+  'Camping': {
     list_type: 'activity',
-    display_name: 'Camping',
     icon: '🏕️',
     items: [
       { name: 'Tent', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Sleeping bag', category: 'gear', quantity: 1, weather_dependent: true },
-      { name: 'Sleeping pad/mat', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Camping pillow', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Headlamp/flashlight', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Extra batteries', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Camping stove', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Cookware set', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Water filter/purification tablets', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Sleeping bag', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Sleeping pad/mattress', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Pillow', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Camping stove and fuel', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Cookware and utensils', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Cooler with ice', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Water bottles/hydration system', category: 'essentials', quantity: 3, weather_dependent: false },
+      { name: 'Headlamp/flashlight', category: 'tech', quantity: 2, weather_dependent: false },
+      { name: 'Lantern', category: 'tech', quantity: 1, weather_dependent: false },
+      { name: 'Fire starter/matches', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'First aid kit', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Multi-tool/knife', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Insect repellent', category: 'toiletries', quantity: 1, weather_dependent: false },
+      { name: 'Camping chairs', category: 'gear', quantity: 2, weather_dependent: false },
       { name: 'Rope/paracord', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Rain jacket', category: 'clothing', quantity: 1, weather_dependent: true },
-      { name: 'Warm layers', category: 'clothing', quantity: 2, weather_dependent: true },
-      { name: 'Hiking boots', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Quick-dry clothes', category: 'clothing', quantity: 3, weather_dependent: false },
-      { name: 'Bug spray', category: 'toiletries', quantity: 1, weather_dependent: false },
-      { name: 'Toilet paper & trowel', category: 'toiletries', quantity: 1, weather_dependent: false },
+      { name: 'Multi-tool/knife', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Trash bags', category: 'essentials', quantity: 5, weather_dependent: false },
+      { name: 'Weather-appropriate clothing', category: 'clothing', quantity: 5, weather_dependent: true },
+      { name: 'Rain gear', category: 'clothing', quantity: 1, weather_dependent: true },
     ],
   },
-  climbing: {
+  'Climbing': {
     list_type: 'activity',
-    display_name: 'Climbing',
     icon: '🧗',
     items: [
-      { name: 'Climbing harness', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Climbing helmet', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Climbing shoes', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Dynamic rope', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Quickdraws', category: 'gear', quantity: 12, weather_dependent: false },
+      { name: 'Climbing shoes', category: 'clothing', quantity: 1, weather_dependent: false },
+      { name: 'Harness', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Helmet', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Chalk and chalk bag', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Rope (if leading)', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Quickdraws/carabiners', category: 'gear', quantity: 10, weather_dependent: false },
       { name: 'Belay device', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Carabiners', category: 'gear', quantity: 6, weather_dependent: false },
-      { name: 'Chalk bag', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Chalk', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Climbing gloves', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Approach shoes', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Athletic tape', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Climbing tape', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'First aid kit', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Weather protection', category: 'clothing', quantity: 1, weather_dependent: true },
+      { name: 'Guidebook/route info', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Headlamp', category: 'tech', quantity: 1, weather_dependent: false },
+      { name: 'Emergency whistle', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Multi-tool', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Weather layers', category: 'clothing', quantity: 3, weather_dependent: true },
+      { name: 'Rain jacket', category: 'clothing', quantity: 1, weather_dependent: true },
     ],
   },
-  hiking: {
+  'Hiking': {
     list_type: 'activity',
-    display_name: 'Hiking',
     icon: '🥾',
     items: [
       { name: 'Hiking boots', category: 'clothing', quantity: 1, weather_dependent: false },
@@ -92,9 +89,8 @@ export const DEFAULT_ACTIVITY_LISTS = {
       { name: 'Headlamp/flashlight', category: 'tech', quantity: 1, weather_dependent: false },
     ],
   },
-  partying: {
+  'Party': {
     list_type: 'activity',
-    display_name: 'Party',
     icon: '🎉',
     items: [
       { name: 'Party outfits', category: 'clothing', quantity: 3, weather_dependent: false },
@@ -111,204 +107,157 @@ export const DEFAULT_ACTIVITY_LISTS = {
       { name: 'Makeup/grooming items', category: 'toiletries', quantity: 1, weather_dependent: false },
     ],
   },
-  business: {
+  'Business': {
     list_type: 'activity',
-    display_name: 'Business',
     icon: '💼',
     items: [
-      { name: 'Business suits/professional attire', category: 'clothing', quantity: 3, weather_dependent: false },
-      { name: 'Dress shirts/blouses', category: 'clothing', quantity: 5, weather_dependent: false },
-      { name: 'Ties/scarves', category: 'clothing', quantity: 3, weather_dependent: false },
-      { name: 'Professional shoes', category: 'clothing', quantity: 2, weather_dependent: false },
+      { name: 'Business suits/formal attire', category: 'clothing', quantity: 3, weather_dependent: false },
+      { name: 'Dress shirts', category: 'clothing', quantity: 5, weather_dependent: false },
+      { name: 'Ties/accessories', category: 'clothing', quantity: 3, weather_dependent: false },
+      { name: 'Dress shoes', category: 'clothing', quantity: 2, weather_dependent: false },
       { name: 'Laptop and charger', category: 'tech', quantity: 1, weather_dependent: false },
       { name: 'Business cards', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Notebook and pens', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Presentation materials', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Phone charger', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Professional bag/briefcase', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Iron/wrinkle release spray', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Belt and cufflinks', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Travel-sized toiletries', category: 'toiletries', quantity: 1, weather_dependent: false },
+      { name: 'Presentation materials', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Professional bag/briefcase', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Travel iron', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Blazer/light jacket', category: 'clothing', quantity: 1, weather_dependent: true },
     ],
   },
-  sightseeing: {
+  'Sightseeing': {
     list_type: 'activity',
-    display_name: 'Sightseeing',
     icon: '🏛️',
     items: [
-      { name: 'Comfortable walking shoes', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Camera or smartphone', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Portable charger/power bank', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Guidebook or offline maps', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Day backpack', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Comfortable walking shoes', category: 'clothing', quantity: 2, weather_dependent: false },
+      { name: 'Camera and memory cards', category: 'tech', quantity: 1, weather_dependent: false },
+      { name: 'Portable charger', category: 'tech', quantity: 1, weather_dependent: false },
+      { name: 'Day pack/small backpack', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Guidebook/maps', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Water bottle', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Snacks', category: 'essentials', quantity: 3, weather_dependent: false },
-      { name: 'Sunscreen and hat', category: 'toiletries', quantity: 1, weather_dependent: true },
-      { name: 'Weather-appropriate layers', category: 'clothing', quantity: 2, weather_dependent: true },
-      { name: 'Cash for entrance fees', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Tickets/reservations printouts', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Comfortable casual clothes', category: 'clothing', quantity: 3, weather_dependent: false },
+      { name: 'Sunglasses', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Hat', category: 'clothing', quantity: 1, weather_dependent: false },
+      { name: 'Comfortable casual clothes', category: 'clothing', quantity: 4, weather_dependent: false },
+      { name: 'Light jacket/sweater', category: 'clothing', quantity: 1, weather_dependent: true },
+      { name: 'Umbrella', category: 'essentials', quantity: 1, weather_dependent: true },
     ],
   },
 };
 
-// Accommodation-based packing lists
+/**
+ * Default accommodation packing lists
+ */
 export const DEFAULT_ACCOMMODATION_LISTS = {
-  hotel: {
+  'Hotel': {
     list_type: 'accommodation',
-    display_name: 'Hotel',
     icon: '🏨',
     items: [
-      { name: 'Formal/semi-formal attire', category: 'clothing', quantity: 2, weather_dependent: false },
-      { name: 'Comfortable room clothes', category: 'clothing', quantity: 2, weather_dependent: false },
-      { name: 'Slippers', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Phone charger', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Travel-sized toiletries', category: 'toiletries', quantity: 1, weather_dependent: false },
+      { name: 'Toiletries (hotel may provide basic ones)', category: 'toiletries', quantity: 1, weather_dependent: false },
       { name: 'Hair dryer (if not provided)', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Iron/garment steamer', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Cash for tips', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Laptop/tablet for entertainment', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Room service menu research', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Slippers', category: 'clothing', quantity: 1, weather_dependent: false },
+      { name: 'Robe', category: 'clothing', quantity: 1, weather_dependent: false },
+      { name: 'Do not disturb sign knowledge', category: 'essentials', quantity: 1, weather_dependent: false },
     ],
   },
-  camping: {
+  'Camping': {
     list_type: 'accommodation',
-    display_name: 'Camping',
     icon: '🏕️',
     items: [
-      { name: 'Tent (if not provided)', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Sleeping bag', category: 'gear', quantity: 1, weather_dependent: true },
-      { name: 'Sleeping pad', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Tent', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Sleeping bag', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Camping pillow', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Flashlight/headlamp', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Biodegradable soap', category: 'toiletries', quantity: 1, weather_dependent: false },
-      { name: 'Quick-dry towel', category: 'toiletries', quantity: 1, weather_dependent: false },
-      { name: 'Campsite cooking gear', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Water storage/filtration', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Weather protection layers', category: 'clothing', quantity: 3, weather_dependent: true },
-      { name: 'Extra socks and underwear', category: 'clothing', quantity: 5, weather_dependent: false },
+      { name: 'Sleeping pad', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Camp stove', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Lantern/flashlight', category: 'tech', quantity: 1, weather_dependent: false },
+      { name: 'Toiletries and toilet paper', category: 'toiletries', quantity: 1, weather_dependent: false },
+      { name: 'Hand sanitizer', category: 'toiletries', quantity: 1, weather_dependent: false },
     ],
   },
-  glamping: {
+  'Glamping': {
     list_type: 'accommodation',
-    display_name: 'Glamping',
     icon: '⛺',
     items: [
-      { name: 'Comfortable outdoor clothes', category: 'clothing', quantity: 3, weather_dependent: false },
-      { name: 'Cozy evening wear', category: 'clothing', quantity: 2, weather_dependent: false },
-      { name: 'Sturdy outdoor shoes', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Light jacket/sweater', category: 'clothing', quantity: 1, weather_dependent: true },
-      { name: 'Camera for scenic views', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Books/kindle for relaxation', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Binoculars for wildlife', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Insect repellent', category: 'toiletries', quantity: 1, weather_dependent: false },
-      { name: 'Flashlight for night walks', category: 'tech', quantity: 1, weather_dependent: false },
+      { name: 'Comfortable loungewear', category: 'clothing', quantity: 2, weather_dependent: false },
+      { name: 'Slippers', category: 'clothing', quantity: 1, weather_dependent: false },
+      { name: 'Personal toiletries', category: 'toiletries', quantity: 1, weather_dependent: false },
+      { name: 'Camera for glamping photos', category: 'tech', quantity: 1, weather_dependent: false },
+      { name: 'Book/e-reader', category: 'essentials', quantity: 1, weather_dependent: false },
     ],
   },
-  couch_surfing: {
+  'Couch Surfing': {
     list_type: 'accommodation',
-    display_name: 'Couch Surfing',
     icon: '🛋️',
     items: [
-      { name: 'Sleeping bag/travel sheets', category: 'gear', quantity: 1, weather_dependent: false },
+      { name: 'Sleeping bag or bedding', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Travel pillow', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Eye mask and ear plugs', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Respectful guest gifts', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Quick-dry towel', category: 'toiletries', quantity: 1, weather_dependent: false },
-      { name: 'Minimal, organized toiletries', category: 'toiletries', quantity: 1, weather_dependent: false },
-      { name: 'Comfortable indoor clothes', category: 'clothing', quantity: 2, weather_dependent: false },
-      { name: 'Slippers/house shoes', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Host contact information', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Backup accommodation plan', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Toiletries bag', category: 'toiletries', quantity: 1, weather_dependent: false },
+      { name: 'Towel', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Flip flops/slippers', category: 'clothing', quantity: 1, weather_dependent: false },
+      { name: 'Host gift', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Eye mask and earplugs', category: 'essentials', quantity: 1, weather_dependent: false },
     ],
   },
-  airbnb: {
+  'Airbnb': {
     list_type: 'accommodation',
-    display_name: 'Airbnb',
     icon: '🏠',
     items: [
-      { name: 'Check-in instructions printout', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Host contact information', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Groceries for cooking', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Coffee/tea supplies', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Kitchen basics (if needed)', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Laundry detergent pods', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Comfortable home clothes', category: 'clothing', quantity: 3, weather_dependent: false },
-      { name: 'All necessary toiletries', category: 'toiletries', quantity: 1, weather_dependent: false },
-      { name: 'Entertainment (books, games)', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Extra bedding (if uncertain)', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Toiletries', category: 'toiletries', quantity: 1, weather_dependent: false },
+      { name: 'Towel (check if provided)', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Basic cooking supplies', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Coffee/tea', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Cleaning supplies', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Slippers', category: 'clothing', quantity: 1, weather_dependent: false },
     ],
   },
 };
 
-// Companion-based packing lists
+/**
+ * Default companion packing lists
+ */
 export const DEFAULT_COMPANION_LISTS = {
-  alone: {
+  'Solo Travel': {
     list_type: 'companion',
-    display_name: 'Solo Travel',
     icon: '🧍',
     items: [
-      { name: 'Emergency contact list', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Copies of important documents', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Personal safety items', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Entertainment (books, games)', category: 'essentials', quantity: 2, weather_dependent: false },
-      { name: 'Solo dining research', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Local SIM card/international plan', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Portable charger', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Journal/travel diary', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Cash for solo expenses', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Confidence-boosting outfits', category: 'clothing', quantity: 2, weather_dependent: false },
+      { name: 'Emergency contact list', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Entertainment (books, music)', category: 'essentials', quantity: 3, weather_dependent: false },
+      { name: 'Backup communication device', category: 'tech', quantity: 1, weather_dependent: false },
+      { name: 'Solo dining comfort items', category: 'essentials', quantity: 1, weather_dependent: false },
     ],
   },
-  spouse: {
+  'With Partner': {
     list_type: 'companion',
-    display_name: 'With Partner',
     icon: '💑',
     items: [
+      { name: 'Shared items coordination', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Romantic dinner outfit', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Couple activities research', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Camera for couple photos', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Shared toiletries (if preferred)', category: 'toiletries', quantity: 1, weather_dependent: false },
-      { name: 'Anniversary/special occasion items', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Comfortable matching outfits', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Surprise treats/gifts', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Shared entertainment', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Couple spa/massage items', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Shared toiletries', category: 'toiletries', quantity: 1, weather_dependent: false },
     ],
   },
-  friends: {
+  'With Friends': {
     list_type: 'companion',
-    display_name: 'With Friends',
     icon: '👥',
     items: [
-      { name: 'Group activity supplies', category: 'gear', quantity: 1, weather_dependent: false },
-      { name: 'Sharing-size snacks', category: 'essentials', quantity: 3, weather_dependent: false },
+      { name: 'Group activity supplies', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Shared accommodation items', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Party/social clothes', category: 'clothing', quantity: 2, weather_dependent: false },
-      { name: 'Group games/cards', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Shared expenses fund', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Group photo props', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'First aid kit (for group)', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Group communication plan', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Backup plans for activities', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Extra phone chargers', category: 'tech', quantity: 2, weather_dependent: false },
+      { name: 'Group photos camera', category: 'tech', quantity: 1, weather_dependent: false },
+      { name: 'Cash for splitting bills', category: 'essentials', quantity: 1, weather_dependent: false },
     ],
   },
-  family: {
+  'With Family': {
     list_type: 'companion',
-    display_name: 'With Family',
     icon: '👨‍👩‍👧',
     items: [
-      { name: 'Family entertainment/games', category: 'essentials', quantity: 2, weather_dependent: false },
-      { name: 'Child-friendly snacks', category: 'essentials', quantity: 5, weather_dependent: false },
-      { name: 'Family-appropriate outfits', category: 'clothing', quantity: 3, weather_dependent: false },
-      { name: 'First aid kit (comprehensive)', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Child safety items', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Educational materials/guidebooks', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Camera for family memories', category: 'tech', quantity: 1, weather_dependent: false },
-      { name: 'Comfortable family shoes', category: 'clothing', quantity: 1, weather_dependent: false },
-      { name: 'Emergency contact information', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Family activity research', category: 'essentials', quantity: 1, weather_dependent: false },
-      { name: 'Extra clothing for kids', category: 'clothing', quantity: 2, weather_dependent: false },
+      { name: 'Family activity supplies', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Child-friendly items', category: 'essentials', quantity: 3, weather_dependent: false },
+      { name: 'First aid kit', category: 'essentials', quantity: 1, weather_dependent: false },
+      { name: 'Entertainment for kids', category: 'essentials', quantity: 5, weather_dependent: false },
+      { name: 'Snacks', category: 'essentials', quantity: 10, weather_dependent: false },
+      { name: 'Family photos equipment', category: 'tech', quantity: 1, weather_dependent: false },
     ],
   },
 };
@@ -444,39 +393,39 @@ export function createDefaultListTypesForUser(userId) {
   const listTypes = [];
   
   // Add activity list types
-  Object.entries(DEFAULT_ACTIVITY_LISTS).forEach(([listName, listData]) => {
+  Object.entries(DEFAULT_ACTIVITY_LISTS).forEach(([displayName, listData]) => {
     listTypes.push({
       type_group: 'activity',
-      list_name: listName,
-      display_name: listData.display_name,
+      list_name: displayName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+      display_name: displayName,
       icon: listData.icon,
-      description: `Items needed for ${listData.display_name.toLowerCase()}`,
+      description: `Items needed for ${displayName.toLowerCase()}`,
       is_default: true,
       created_by_id: userId,
     });
   });
   
   // Add accommodation list types
-  Object.entries(DEFAULT_ACCOMMODATION_LISTS).forEach(([listName, listData]) => {
+  Object.entries(DEFAULT_ACCOMMODATION_LISTS).forEach(([displayName, listData]) => {
     listTypes.push({
       type_group: 'accommodation',
-      list_name: listName,
-      display_name: listData.display_name,
+      list_name: displayName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+      display_name: displayName,
       icon: listData.icon,
-      description: `Items for staying at ${listData.display_name.toLowerCase()}`,
+      description: `Items for staying at ${displayName.toLowerCase()}`,
       is_default: true,
       created_by_id: userId,
     });
   });
   
   // Add companion list types
-  Object.entries(DEFAULT_COMPANION_LISTS).forEach(([listName, listData]) => {
+  Object.entries(DEFAULT_COMPANION_LISTS).forEach(([displayName, listData]) => {
     listTypes.push({
       type_group: 'companion',
-      list_name: listName,
-      display_name: listData.display_name,
+      list_name: displayName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+      display_name: displayName,
       icon: listData.icon,
-      description: `Items for traveling ${listData.display_name.toLowerCase()}`,
+      description: `Items for traveling ${displayName.toLowerCase()}`,
       is_default: true,
       created_by_id: userId,
     });

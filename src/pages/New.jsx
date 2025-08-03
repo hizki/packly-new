@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { PackingList } from '@/api/entities';
-import { User } from '@/api/entities';
+import { PackingList, BaseList, User, List } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +38,7 @@ export default function NewListPage() {
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [weatherLoading, setWeatherLoading] = useState({});
+  const [loading, setLoading] = useState(true);
 
   const [settings, setSettings] = useState({
     weather_sensitivity: { cold_threshold: 15, hot_threshold: 25 },
@@ -49,6 +49,11 @@ export default function NewListPage() {
   const [travelTips, setTravelTips] = useState([]);
 
   const [validationErrors, setValidationErrors] = useState({});
+
+  // Dynamic options loaded from database
+  const [accommodationOptions, setAccommodationOptions] = useState([]);
+  const [companionOptions, setCompanionOptions] = useState([]);
+  const [activities, setActivities] = useState([]);
 
   const mapRef = useRef(null);
   const mapsApiKeyRef = useRef(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
@@ -81,31 +86,6 @@ export default function NewListPage() {
     d => d.location && d.location.trim().length > 0,
   );
 
-  const accommodationOptions = [
-    { id: 'hotel', label: 'Hotel', icon: '🏨' },
-    { id: 'camping', label: 'Camping', icon: '🏕️' },
-    { id: 'glamping', label: 'Glamping', icon: '⛺' },
-    { id: 'couch_surfing', label: 'Couch Surfing', icon: '🛋️' },
-    { id: 'airbnb', label: 'Airbnb', icon: '🏠' },
-  ];
-
-  const companionOptions = [
-    { id: 'alone', label: 'Alone', icon: '🧍' },
-    { id: 'spouse', label: 'Spouse/Partner', icon: '💑' },
-    { id: 'friends', label: 'Friends', icon: '👥' },
-    { id: 'family', label: 'Family', icon: '👨‍👩‍👧' },
-  ];
-
-  const activities = [
-    { id: 'beach', label: 'Beach', icon: '🏖️' },
-    { id: 'camping', label: 'Camping', icon: '🏕️' },
-    { id: 'climbing', label: 'Climbing', icon: '🧗' },
-    { id: 'hiking', label: 'Hiking', icon: '🥾' },
-    { id: 'partying', label: 'Partying', icon: '🎉' },
-    { id: 'business', label: 'Business', icon: '💼' },
-    { id: 'sightseeing', label: 'Sightseeing', icon: '🏛️' },
-  ];
-
   const amenities = [
     { id: 'laundry', label: 'Laundry' },
     { id: 'gym', label: 'Gym' },
@@ -114,6 +94,7 @@ export default function NewListPage() {
   ];
 
   useEffect(() => {
+    loadDynamicOptions();
     loadUserSettings();
 
     return () => {
@@ -183,6 +164,67 @@ export default function NewListPage() {
   }, [formData.destinations.length]);
 
   // Remove the coordinates-based useEffect as it causes too many re-initializations
+
+  const loadDynamicOptions = async () => {
+    setLoading(true);
+    try {
+      // Get current user
+      const user = await User.me();
+      
+      // Load user's actual lists from database
+      const [activityLists, accommodationLists, companionLists] = await Promise.all([
+        List.filter({ owner_id: user.id, list_type: 'activity' }),
+        List.filter({ owner_id: user.id, list_type: 'accommodation' }),
+        List.filter({ owner_id: user.id, list_type: 'companion' }),
+      ]);
+
+      // Transform to expected format
+      setActivities(activityLists.map(list => ({
+        id: list.list_name,
+        label: list.name || list.list_name,
+        icon: list.icon || '📝',
+      })));
+
+      setAccommodationOptions(accommodationLists.map(list => ({
+        id: list.list_name,
+        label: list.name || list.list_name,
+        icon: list.icon || '🏠',
+      })));
+
+      setCompanionOptions(companionLists.map(list => ({
+        id: list.list_name,
+        label: list.name || list.list_name,
+        icon: list.icon || '👥',
+      })));
+
+      // Set default accommodation if available
+      if (accommodationLists.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          accommodation: accommodationLists[0].list_name,
+        }));
+      }
+
+    } catch (error) {
+      console.error('Error loading dynamic options:', error);
+      // Fallback to basic options if API fails
+      setActivities([
+        { id: 'beach', label: 'Beach', icon: '🏖️' },
+        { id: 'hiking', label: 'Hiking', icon: '🥾' },
+        { id: 'business', label: 'Business', icon: '💼' },
+      ]);
+      setAccommodationOptions([
+        { id: 'hotel', label: 'Hotel', icon: '🏨' },
+        { id: 'airbnb', label: 'Airbnb', icon: '🏠' },
+      ]);
+      setCompanionOptions([
+        { id: 'alone', label: 'Alone', icon: '🧍' },
+        { id: 'friends', label: 'Friends', icon: '👥' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadUserSettings = async () => {
     try {
@@ -846,498 +888,292 @@ export default function NewListPage() {
         return totalDays;
       };
 
-      // Generate dynamic suggestions based on all parameters
-      const generateDynamicSuggestions = (weatherType, activities, accommodation, tripDuration) => {
+      // Generate database-driven suggestions based on user selections
+      const generateDynamicSuggestions = async (
+        weatherType, 
+        selectedActivities, 
+        selectedAccommodation, 
+        selectedCompanions, 
+        tripDuration,
+      ) => {
         const warnings = [];
         const tips = [];
         let items = [];
 
-        // Check for missing information and add warnings
-        if (weatherType === 'unknown') {
-          warnings.push('Weather data unavailable - using general recommendations');
-        }
-        if (!activities || activities.length === 0) {
-          warnings.push('No activities selected - basic items only');
-        }
-        if (!accommodation) {
-          warnings.push('Accommodation type not specified - using hotel defaults');
-        }
-
-        // Add travel tips
-        if (tripDuration > 14) {
-          tips.push(
-            'For trips longer than 2 weeks, pack 7 days worth of underwear and socks, then do laundry every few days',
-          );
-        }
-
-        // Base clothing quantities based on trip duration
-        const getClothingQuantity = baseQuantity => {
-          if (tripDuration <= 3) return Math.max(1, Math.ceil(baseQuantity * 0.5));
-          if (tripDuration <= 7) return baseQuantity;
-          if (tripDuration <= 14) return Math.ceil(baseQuantity * 1.5);
-          return Math.ceil(baseQuantity * 2);
-        };
-
-        // Calculate underwear and socks quantities based on trip duration
-        const getUnderwearSocksQuantity = () => {
-          if (tripDuration > 14) {
-            return 7; // For trips > 2 weeks, pack 7 days worth and do laundry
+        try {
+          // Check for missing information and add warnings
+          if (weatherType === 'unknown') {
+            warnings.push('Weather data unavailable - using general recommendations');
           }
-          return tripDuration; // For trips ≤ 2 weeks, pack 1 per day
-        };
+          if (!selectedActivities || selectedActivities.length === 0) {
+            warnings.push('No activities selected - basic items only');
+          }
+          if (!selectedAccommodation) {
+            warnings.push('Accommodation type not specified - using hotel defaults');
+          }
 
-        // Essential items that adjust with trip length
-        const essentialItems = [
-          {
-            name: 'Underwear',
-            category: 'clothing',
-            quantity: getUnderwearSocksQuantity(),
-            is_packed: false,
-            weather_dependent: false,
-          },
-          {
-            name: 'Socks',
-            category: 'clothing',
-            quantity: getUnderwearSocksQuantity(),
-            is_packed: false,
-            weather_dependent: false,
-          },
-          {
-            name: 'Phone Charger',
-            category: 'tech',
-            quantity: 1,
-            is_packed: false,
-            weather_dependent: false,
-          },
-          {
-            name: 'Toothbrush',
-            category: 'toiletries',
-            quantity: 1,
-            is_packed: false,
-            weather_dependent: false,
-          },
-          {
-            name: 'Toothpaste',
-            category: 'toiletries',
-            quantity: tripDuration > 7 ? 2 : 1,
-            is_packed: false,
-            weather_dependent: false,
-          },
-        ];
+          // Add travel tips
+          if (tripDuration > 14) {
+            tips.push(
+              'For trips longer than 2 weeks, pack 7 days worth of underwear and socks, then do laundry every few days',
+            );
+          }
 
-        // Weather-dependent clothing
-        const weatherItems = [];
-        if (weatherType === 'cold') {
-          weatherItems.push(
+          // Helper functions for dynamic quantity adjustments
+          const getClothingQuantity = baseQuantity => {
+            if (tripDuration <= 3) return Math.max(1, Math.ceil(baseQuantity * 0.5));
+            if (tripDuration <= 7) return baseQuantity;
+            if (tripDuration <= 14) return Math.ceil(baseQuantity * 1.5);
+            return Math.ceil(baseQuantity * 2);
+          };
+
+          const getUnderwearSocksQuantity = () => {
+            if (tripDuration > 14) {
+              return 7; // For trips > 2 weeks, pack 7 days worth and do laundry
+            }
+            return tripDuration; // For trips ≤ 2 weeks, pack 1 per day
+          };
+
+          // Fetch items from selected lists
+          const allSelectedListNames = [
+            ...selectedActivities,
+            selectedAccommodation,
+            ...selectedCompanions,
+          ].filter(Boolean);
+
+          const user = await User.me();
+          const allItemsFromLists = [];
+
+          // Fetch items from each selected list
+          for (const listName of allSelectedListNames) {
+            try {
+              // First try to find in user's custom lists
+              const customLists = await BaseList.filter({
+                owner_id: user.id,
+                list_name: listName,
+              });
+
+              if (customLists.length > 0) {
+                allItemsFromLists.push(...customLists[0].items);
+              } else {
+                // Fallback to default/sample lists
+                const sampleLists = await BaseList.filter({
+                  list_name: listName,
+                  is_sample: true,
+                });
+                if (sampleLists.length > 0) {
+                  allItemsFromLists.push(...sampleLists[0].items);
+                }
+              }
+            } catch (error) {
+              console.warn(`Could not fetch items for list: ${listName}`, error);
+            }
+          }
+
+          // Essential items that adjust with trip length (these are universal)
+          const essentialItems = [
             {
-              name: 'Thermal Underwear',
+              name: 'Underwear',
               category: 'clothing',
-              quantity: getClothingQuantity(2),
+              quantity: getUnderwearSocksQuantity(),
               is_packed: false,
-              weather_dependent: true,
+              weather_dependent: false,
             },
             {
-              name: 'Warm Jacket',
+              name: 'Socks',
               category: 'clothing',
+              quantity: getUnderwearSocksQuantity(),
+              is_packed: false,
+              weather_dependent: false,
+            },
+            {
+              name: 'Phone Charger',
+              category: 'tech',
               quantity: 1,
               is_packed: false,
-              weather_dependent: true,
+              weather_dependent: false,
             },
             {
-              name: 'Gloves',
-              category: 'clothing',
+              name: 'Toothbrush',
+              category: 'toiletries',
               quantity: 1,
               is_packed: false,
-              weather_dependent: true,
+              weather_dependent: false,
             },
             {
-              name: 'Scarf',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'Beanie',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'Warm Socks',
-              category: 'clothing',
-              quantity: getClothingQuantity(3),
-              is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'Long Pants',
-              category: 'clothing',
-              quantity: getClothingQuantity(3),
-              is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'Long Sleeve Shirts',
-              category: 'clothing',
-              quantity: getClothingQuantity(3),
-              is_packed: false,
-              weather_dependent: true,
-            },
-          );
-        } else if (weatherType === 'hot') {
-          weatherItems.push(
-            {
-              name: 'Sunscreen',
+              name: 'Toothpaste',
               category: 'toiletries',
               quantity: tripDuration > 7 ? 2 : 1,
               is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'Sunglasses',
-              category: 'essentials',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'Sun Hat',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'Sandals',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'Light T-Shirts',
-              category: 'clothing',
-              quantity: getClothingQuantity(4),
-              is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'Shorts',
-              category: 'clothing',
-              quantity: getClothingQuantity(3),
-              is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'Light Dress/Shirt',
-              category: 'clothing',
-              quantity: getClothingQuantity(2),
-              is_packed: false,
-              weather_dependent: true,
-            },
-          );
-        } else {
-          // Mild or unknown weather - balanced approach
-          weatherItems.push(
-            {
-              name: 'Light Jacket',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: true,
-            },
-            {
-              name: 'T-Shirts',
-              category: 'clothing',
-              quantity: getClothingQuantity(3),
-              is_packed: false,
               weather_dependent: false,
             },
-            {
-              name: 'Long Pants',
-              category: 'clothing',
-              quantity: getClothingQuantity(2),
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Shorts',
-              category: 'clothing',
-              quantity: getClothingQuantity(1),
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Comfortable Walking Shoes',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-          );
-        }
+          ];
 
-        // Activity-specific items
-        const activityItems = [];
-        if (activities.includes('beach')) {
-          activityItems.push(
-            {
-              name: 'Swimsuit',
-              category: 'clothing',
-              quantity: tripDuration > 3 ? 2 : 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Beach Towel',
-              category: 'essentials',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Flip Flops',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-          );
-        }
-        if (activities.includes('hiking') || activities.includes('camping')) {
-          activityItems.push(
-            {
-              name: 'Hiking Boots',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Backpack',
-              category: 'gear',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Water Bottle',
-              category: 'essentials',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Quick-dry Hiking Pants',
-              category: 'clothing',
-              quantity: getClothingQuantity(2),
-              is_packed: false,
-              weather_dependent: false,
-            },
-          );
-        }
-        if (activities.includes('business')) {
-          activityItems.push(
-            {
-              name: 'Dress Shirt',
-              category: 'clothing',
-              quantity: getClothingQuantity(3),
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Dress Pants',
-              category: 'clothing',
-              quantity: getClothingQuantity(2),
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Dress Shoes',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Tie',
-              category: 'clothing',
-              quantity: getClothingQuantity(2),
-              is_packed: false,
-              weather_dependent: false,
-            },
-          );
-        }
-        if (activities.includes('partying')) {
-          activityItems.push(
-            {
-              name: 'Nice Outfit',
-              category: 'clothing',
-              quantity: getClothingQuantity(2),
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Dressy Shoes',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-          );
-        }
-
-        // Rain gear based on precipitation probability
-        const rainItems = [];
-        const hasRainData = weatherData.some(w => w.rain_chance);
-        if (hasRainData) {
-          const rainChances = weatherData.map(w => w.rain_chance).filter(Boolean);
-              const maxRainChance = rainChances.includes('strong')
-      ? 'strong'
-      : rainChances.includes('chance')
-        ? 'chance'
-        : rainChances.includes('slight')
-          ? 'slight'
-          : 'none';
-
-    if (maxRainChance === 'strong') {
-            rainItems.push(
+          // Weather-dependent items (these supplement the list items)
+          const weatherItems = [];
+          if (weatherType === 'cold') {
+            weatherItems.push(
               {
-                name: 'Waterproof Jacket',
+                name: 'Thermal Underwear',
+                category: 'clothing',
+                quantity: getClothingQuantity(2),
+                is_packed: false,
+                weather_dependent: true,
+              },
+              {
+                name: 'Warm Jacket',
                 category: 'clothing',
                 quantity: 1,
                 is_packed: false,
                 weather_dependent: true,
               },
               {
-                name: 'Waterproof Pants',
-                category: 'clothing',
-                quantity: 1,
-                is_packed: false,
-                weather_dependent: true,
-              },
-              {
-                name: 'Umbrella',
-                category: 'essentials',
-                quantity: 1,
-                is_packed: false,
-                weather_dependent: true,
-              },
-              {
-                name: 'Waterproof Shoes/Boots',
+                name: 'Gloves',
                 category: 'clothing',
                 quantity: 1,
                 is_packed: false,
                 weather_dependent: true,
               },
             );
-          } else if (maxRainChance === 'chance') {
-            rainItems.push(
+          } else if (weatherType === 'hot') {
+            weatherItems.push(
               {
-                name: 'Rain Jacket',
-                category: 'clothing',
-                quantity: 1,
+                name: 'Sunscreen',
+                category: 'toiletries',
+                quantity: tripDuration > 7 ? 2 : 1,
                 is_packed: false,
                 weather_dependent: true,
               },
               {
-                name: 'Umbrella',
+                name: 'Extra Sunglasses',
                 category: 'essentials',
                 quantity: 1,
                 is_packed: false,
                 weather_dependent: true,
               },
             );
-          } else if (maxRainChance === 'slight') {
-            rainItems.push({
-              name: 'Light Rain Jacket',
-              category: 'clothing',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: true,
-            });
           }
+
+          // Rain gear based on precipitation probability
+          const rainItems = [];
+          const hasRainData = weatherData.some(w => w.rain_chance);
+          if (hasRainData) {
+            const rainChances = weatherData.map(w => w.rain_chance).filter(Boolean);
+            const maxRainChance = rainChances.includes('strong')
+              ? 'strong'
+              : rainChances.includes('chance')
+                ? 'chance' 
+                : rainChances.includes('slight')
+                  ? 'slight'
+                  : 'none';
+
+            if (maxRainChance === 'strong') {
+              rainItems.push(
+                {
+                  name: 'Waterproof Jacket',
+                  category: 'clothing',
+                  quantity: 1,
+                  is_packed: false,
+                  weather_dependent: true,
+                },
+                {
+                  name: 'Umbrella',
+                  category: 'essentials',
+                  quantity: 1,
+                  is_packed: false,
+                  weather_dependent: true,
+                },
+              );
+            } else if (maxRainChance === 'chance') {
+              rainItems.push({
+                name: 'Light Rain Jacket',
+                category: 'clothing',
+                quantity: 1,
+                is_packed: false,
+                weather_dependent: true,
+              });
+            }
+          }
+
+          // Combine all items from database lists with essential and weather items
+          const combinedItems = [
+            ...allItemsFromLists,
+            ...essentialItems,
+            ...weatherItems,
+            ...rainItems,
+          ];
+
+          // Remove duplicates and apply quantity adjustments
+          const itemMap = new Map();
+          
+          combinedItems.forEach(item => {
+            const key = item.name.toLowerCase();
+            if (itemMap.has(key)) {
+              // If item already exists, keep the higher quantity
+              const existing = itemMap.get(key);
+              if (item.quantity > existing.quantity) {
+                itemMap.set(key, item);
+              }
+            } else {
+              // Apply trip duration adjustments to clothing items from lists
+              const adjustedItem = { ...item };
+              if (item.category === 'clothing' && item.quantity > 1) {
+                adjustedItem.quantity = getClothingQuantity(item.quantity);
+              }
+              itemMap.set(key, adjustedItem);
+            }
+          });
+
+          items = Array.from(itemMap.values());
+
+          // Set warnings for missing info and travel tips
+          setMissingInfoWarnings(warnings);
+          setTravelTips(tips);
+
+          return { items, warnings, tips };
+
+        } catch (error) {
+          console.error('Error generating suggestions from database:', error);
+          warnings.push('Error loading list data - using basic fallback items');
+          
+          // Fallback to minimal essential items
+          items = [
+            {
+              name: 'Underwear',
+              category: 'clothing',
+              quantity: Math.min(tripDuration, 7),
+              is_packed: false,
+              weather_dependent: false,
+            },
+            {
+              name: 'Socks',
+              category: 'clothing', 
+              quantity: Math.min(tripDuration, 7),
+              is_packed: false,
+              weather_dependent: false,
+            },
+            {
+              name: 'Phone Charger',
+              category: 'tech',
+              quantity: 1,
+              is_packed: false,
+              weather_dependent: false,
+            },
+          ];
+
+          setMissingInfoWarnings(warnings);
+          setTravelTips(tips);
+          return { items, warnings, tips };
         }
-
-        // Accommodation-specific items
-        const accommodationItems = [];
-        if (accommodation === 'camping' || accommodation === 'glamping') {
-          accommodationItems.push(
-            {
-              name: 'Sleeping Bag',
-              category: 'gear',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Pillow',
-              category: 'gear',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Flashlight',
-              category: 'gear',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Toiletries Bag',
-              category: 'toiletries',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-          );
-        }
-        if (accommodation === 'couch_surfing') {
-          accommodationItems.push(
-            {
-              name: 'Sleeping Bag',
-              category: 'gear',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-            {
-              name: 'Travel Pillow',
-              category: 'gear',
-              quantity: 1,
-              is_packed: false,
-              weather_dependent: false,
-            },
-          );
-        }
-
-        // Check amenities to avoid redundant items
-        // Note: Underwear and socks quantities are now handled by getUnderwearSocksQuantity()
-
-        items = [
-          ...essentialItems,
-          ...weatherItems,
-          ...activityItems,
-          ...rainItems,
-          ...accommodationItems,
-        ];
-
-        // Set warnings for missing info and travel tips
-        setMissingInfoWarnings(warnings);
-        setTravelTips(tips);
-
-        return { items, warnings, tips };
       };
 
       const tripDuration = calculateTripDuration();
 
-      const response = generateDynamicSuggestions(
+      const response = await generateDynamicSuggestions(
         weatherType,
         formData.activities,
         formData.accommodation,
+        formData.companions,
         tripDuration,
       );
 
@@ -1571,7 +1407,8 @@ export default function NewListPage() {
               {/* Step 1 */}
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm 
+                    font-semibold transition-colors duration-200 ${
                     step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
                   }`}
                 >
@@ -1583,7 +1420,8 @@ export default function NewListPage() {
               {/* Step 2 */}
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm 
+                    font-semibold transition-colors duration-200 ${
                     step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
                   }`}
                 >
@@ -1595,7 +1433,8 @@ export default function NewListPage() {
               {/* Step 3 */}
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm 
+                    font-semibold transition-colors duration-200 ${
                     step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
                   }`}
                 >
@@ -1810,10 +1649,17 @@ export default function NewListPage() {
               <CardTitle>Trip Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-8">
-              <div>
-                <Label className="block mb-3">What activities are you planning?</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {activities.map(activity => (
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <LottieSpinner size={60} color="#3b82f6" />
+                  <span className="ml-3 text-gray-600">Loading trip options...</span>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <Label className="block mb-3">What activities are you planning?</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {activities.map(activity => (
                     <div
                       key={activity.id}
                       className={`
@@ -1923,6 +1769,8 @@ export default function NewListPage() {
                   ))}
                 </div>
               </div>
+                </>
+              )}
             </CardContent>
           </Card>
         )}
