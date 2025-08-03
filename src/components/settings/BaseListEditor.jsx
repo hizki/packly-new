@@ -30,7 +30,7 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
 
   const handleCategorySelect = async category => {
     setSelectedCategory(category);
-    const existingList = lists.find(l => l.category === category);
+    const existingList = lists.find(l => l.list_name === category);
     if (existingList) {
       setCurrentList(existingList);
       setItems(existingList.items || []);
@@ -52,7 +52,7 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
       } else {
         await BaseList.create({
           list_type: listType,
-          category: selectedCategory,
+          list_name: selectedCategory,
           items: updatedItems,
           owner_id: user.id,
           is_sample: false,

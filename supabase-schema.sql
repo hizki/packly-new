@@ -15,11 +15,27 @@ CREATE TABLE users (
   updated_date TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- List Types table - stores available list types/categories dynamically
+CREATE TABLE list_types (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  type_group TEXT NOT NULL, -- 'activity', 'accommodation', 'companion'
+  list_name TEXT NOT NULL, -- 'beach', 'camping', 'hotel', etc.
+  display_name TEXT NOT NULL, -- 'Beach Trip', 'Camping', 'Hotel', etc.
+  icon TEXT, -- emoji or icon identifier
+  description TEXT,
+  is_default BOOLEAN DEFAULT true,
+  created_date TIMESTAMPTZ DEFAULT NOW(),
+  updated_date TIMESTAMPTZ DEFAULT NOW(),
+  created_by_id UUID REFERENCES auth.users(id),
+  UNIQUE(type_group, list_name)
+);
+
 -- Base Lists table
 CREATE TABLE base_lists (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   list_type TEXT NOT NULL, -- 'activity', 'accommodation', 'companion'
-  category TEXT NOT NULL, -- 'camping', 'beach', 'hotel', etc.
+  list_name TEXT NOT NULL, -- 'camping', 'beach', 'hotel', etc.
+  icon TEXT,
   items JSONB NOT NULL DEFAULT '[]',
   created_date TIMESTAMPTZ DEFAULT NOW(),
   updated_date TIMESTAMPTZ DEFAULT NOW(),
@@ -46,7 +62,7 @@ CREATE TABLE tip_lists (
 CREATE TABLE lists (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   list_type TEXT NOT NULL,
-  category TEXT,
+  list_name TEXT,
   name TEXT,
   icon TEXT,
   items JSONB NOT NULL DEFAULT '[]',
@@ -79,6 +95,7 @@ CREATE TABLE packing_lists (
 );
 
 -- Enable Row Level Security
+ALTER TABLE list_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE base_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tip_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lists ENABLE ROW LEVEL SECURITY;
@@ -90,6 +107,11 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own profile" ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can create own profile" ON users FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid() = id);
+
+-- List types: Public read for default types, auth users can create custom
+CREATE POLICY "Public can view default list types" ON list_types FOR SELECT USING (is_default = true OR auth.uid() = created_by_id);
+CREATE POLICY "Auth users can create custom list types" ON list_types FOR INSERT WITH CHECK (auth.uid() = created_by_id);
+CREATE POLICY "Auth users can update own list types" ON list_types FOR UPDATE USING (auth.uid() = created_by_id);
 
 -- Base lists: Public read, auth users can create
 CREATE POLICY "Public can view base lists" ON base_lists FOR SELECT USING (true);

@@ -3,13 +3,12 @@
  * Comprehensive packing suggestions based on activity, accommodation, and companion types
  */
 
-import { generateEmojisForItemsSync } from './emojiGenerator';
-
 // Activity-based packing lists
 export const DEFAULT_ACTIVITY_LISTS = {
   beach: {
     list_type: 'activity',
-    category: 'beach',
+    display_name: 'Beach Trip',
+    icon: '🏖️',
     items: [
       { name: 'Sunscreen (SPF 30+)', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Beach towel', category: 'essentials', quantity: 1, weather_dependent: false },
@@ -24,11 +23,12 @@ export const DEFAULT_ACTIVITY_LISTS = {
       { name: 'Snorkeling gear', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Beach volleyball', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Aloe vera gel', category: 'toiletries', quantity: 1, weather_dependent: false },
-    ]
+    ],
   },
   camping: {
     list_type: 'activity',
-    category: 'camping',
+    display_name: 'Camping',
+    icon: '🏕️',
     items: [
       { name: 'Tent', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Sleeping bag', category: 'gear', quantity: 1, weather_dependent: true },
@@ -48,11 +48,12 @@ export const DEFAULT_ACTIVITY_LISTS = {
       { name: 'Quick-dry clothes', category: 'clothing', quantity: 3, weather_dependent: false },
       { name: 'Bug spray', category: 'toiletries', quantity: 1, weather_dependent: false },
       { name: 'Toilet paper & trowel', category: 'toiletries', quantity: 1, weather_dependent: false },
-    ]
+    ],
   },
   climbing: {
     list_type: 'activity',
-    category: 'climbing',
+    display_name: 'Climbing',
+    icon: '🧗',
     items: [
       { name: 'Climbing harness', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Climbing helmet', category: 'gear', quantity: 1, weather_dependent: false },
@@ -68,11 +69,12 @@ export const DEFAULT_ACTIVITY_LISTS = {
       { name: 'Athletic tape', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'First aid kit', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Weather protection', category: 'clothing', quantity: 1, weather_dependent: true },
-    ]
+    ],
   },
   hiking: {
     list_type: 'activity',
-    category: 'hiking',
+    display_name: 'Hiking',
+    icon: '🥾',
     items: [
       { name: 'Hiking boots', category: 'clothing', quantity: 1, weather_dependent: false },
       { name: 'Backpack', category: 'gear', quantity: 1, weather_dependent: false },
@@ -88,11 +90,12 @@ export const DEFAULT_ACTIVITY_LISTS = {
       { name: 'Insect repellent', category: 'toiletries', quantity: 1, weather_dependent: false },
       { name: 'Emergency whistle', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Headlamp/flashlight', category: 'tech', quantity: 1, weather_dependent: false },
-    ]
+    ],
   },
   partying: {
     list_type: 'activity',
-    category: 'partying',
+    display_name: 'Party',
+    icon: '🎉',
     items: [
       { name: 'Party outfits', category: 'clothing', quantity: 3, weather_dependent: false },
       { name: 'Dress shoes/heels', category: 'clothing', quantity: 2, weather_dependent: false },
@@ -106,11 +109,12 @@ export const DEFAULT_ACTIVITY_LISTS = {
       { name: 'Small purse/wallet', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Jacket/light sweater', category: 'clothing', quantity: 1, weather_dependent: true },
       { name: 'Makeup/grooming items', category: 'toiletries', quantity: 1, weather_dependent: false },
-    ]
+    ],
   },
   business: {
     list_type: 'activity',
-    category: 'business',
+    display_name: 'Business',
+    icon: '💼',
     items: [
       { name: 'Business suits/professional attire', category: 'clothing', quantity: 3, weather_dependent: false },
       { name: 'Dress shirts/blouses', category: 'clothing', quantity: 5, weather_dependent: false },
@@ -125,11 +129,12 @@ export const DEFAULT_ACTIVITY_LISTS = {
       { name: 'Iron/wrinkle release spray', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Belt and cufflinks', category: 'clothing', quantity: 1, weather_dependent: false },
       { name: 'Travel-sized toiletries', category: 'toiletries', quantity: 1, weather_dependent: false },
-    ]
+    ],
   },
   sightseeing: {
     list_type: 'activity',
-    category: 'sightseeing',
+    display_name: 'Sightseeing',
+    icon: '🏛️',
     items: [
       { name: 'Comfortable walking shoes', category: 'clothing', quantity: 1, weather_dependent: false },
       { name: 'Camera or smartphone', category: 'tech', quantity: 1, weather_dependent: false },
@@ -143,15 +148,16 @@ export const DEFAULT_ACTIVITY_LISTS = {
       { name: 'Cash for entrance fees', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Tickets/reservations printouts', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Comfortable casual clothes', category: 'clothing', quantity: 3, weather_dependent: false },
-    ]
-  }
+    ],
+  },
 };
 
 // Accommodation-based packing lists
 export const DEFAULT_ACCOMMODATION_LISTS = {
   hotel: {
     list_type: 'accommodation',
-    category: 'hotel',
+    display_name: 'Hotel',
+    icon: '🏨',
     items: [
       { name: 'Formal/semi-formal attire', category: 'clothing', quantity: 2, weather_dependent: false },
       { name: 'Comfortable room clothes', category: 'clothing', quantity: 2, weather_dependent: false },
@@ -163,11 +169,12 @@ export const DEFAULT_ACCOMMODATION_LISTS = {
       { name: 'Cash for tips', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Laptop/tablet for entertainment', category: 'tech', quantity: 1, weather_dependent: false },
       { name: 'Room service menu research', category: 'essentials', quantity: 1, weather_dependent: false },
-    ]
+    ],
   },
   camping: {
     list_type: 'accommodation',
-    category: 'camping',
+    display_name: 'Camping',
+    icon: '🏕️',
     items: [
       { name: 'Tent (if not provided)', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Sleeping bag', category: 'gear', quantity: 1, weather_dependent: true },
@@ -180,11 +187,12 @@ export const DEFAULT_ACCOMMODATION_LISTS = {
       { name: 'Water storage/filtration', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Weather protection layers', category: 'clothing', quantity: 3, weather_dependent: true },
       { name: 'Extra socks and underwear', category: 'clothing', quantity: 5, weather_dependent: false },
-    ]
+    ],
   },
   glamping: {
     list_type: 'accommodation',
-    category: 'glamping',
+    display_name: 'Glamping',
+    icon: '⛺',
     items: [
       { name: 'Comfortable outdoor clothes', category: 'clothing', quantity: 3, weather_dependent: false },
       { name: 'Cozy evening wear', category: 'clothing', quantity: 2, weather_dependent: false },
@@ -195,11 +203,12 @@ export const DEFAULT_ACCOMMODATION_LISTS = {
       { name: 'Binoculars for wildlife', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Insect repellent', category: 'toiletries', quantity: 1, weather_dependent: false },
       { name: 'Flashlight for night walks', category: 'tech', quantity: 1, weather_dependent: false },
-    ]
+    ],
   },
   couch_surfing: {
     list_type: 'accommodation',
-    category: 'couch_surfing',
+    display_name: 'Couch Surfing',
+    icon: '🛋️',
     items: [
       { name: 'Sleeping bag/travel sheets', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Travel pillow', category: 'gear', quantity: 1, weather_dependent: false },
@@ -211,11 +220,12 @@ export const DEFAULT_ACCOMMODATION_LISTS = {
       { name: 'Slippers/house shoes', category: 'clothing', quantity: 1, weather_dependent: false },
       { name: 'Host contact information', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Backup accommodation plan', category: 'essentials', quantity: 1, weather_dependent: false },
-    ]
+    ],
   },
   airbnb: {
     list_type: 'accommodation',
-    category: 'airbnb',
+    display_name: 'Airbnb',
+    icon: '🏠',
     items: [
       { name: 'Check-in instructions printout', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Host contact information', category: 'essentials', quantity: 1, weather_dependent: false },
@@ -227,15 +237,16 @@ export const DEFAULT_ACCOMMODATION_LISTS = {
       { name: 'All necessary toiletries', category: 'toiletries', quantity: 1, weather_dependent: false },
       { name: 'Entertainment (books, games)', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Extra bedding (if uncertain)', category: 'essentials', quantity: 1, weather_dependent: false },
-    ]
-  }
+    ],
+  },
 };
 
 // Companion-based packing lists
 export const DEFAULT_COMPANION_LISTS = {
   alone: {
     list_type: 'companion',
-    category: 'alone',
+    display_name: 'Solo Travel',
+    icon: '🧍',
     items: [
       { name: 'Emergency contact list', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Copies of important documents', category: 'essentials', quantity: 1, weather_dependent: false },
@@ -247,11 +258,12 @@ export const DEFAULT_COMPANION_LISTS = {
       { name: 'Journal/travel diary', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Cash for solo expenses', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Confidence-boosting outfits', category: 'clothing', quantity: 2, weather_dependent: false },
-    ]
+    ],
   },
   spouse: {
     list_type: 'companion',
-    category: 'spouse',
+    display_name: 'With Partner',
+    icon: '💑',
     items: [
       { name: 'Romantic dinner outfit', category: 'clothing', quantity: 1, weather_dependent: false },
       { name: 'Couple activities research', category: 'essentials', quantity: 1, weather_dependent: false },
@@ -262,11 +274,12 @@ export const DEFAULT_COMPANION_LISTS = {
       { name: 'Surprise treats/gifts', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Shared entertainment', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Couple spa/massage items', category: 'essentials', quantity: 1, weather_dependent: false },
-    ]
+    ],
   },
   friends: {
     list_type: 'companion',
-    category: 'friends',
+    display_name: 'With Friends',
+    icon: '👥',
     items: [
       { name: 'Group activity supplies', category: 'gear', quantity: 1, weather_dependent: false },
       { name: 'Sharing-size snacks', category: 'essentials', quantity: 3, weather_dependent: false },
@@ -278,11 +291,12 @@ export const DEFAULT_COMPANION_LISTS = {
       { name: 'Group communication plan', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Backup plans for activities', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Extra phone chargers', category: 'tech', quantity: 2, weather_dependent: false },
-    ]
+    ],
   },
   family: {
     list_type: 'companion',
-    category: 'family',
+    display_name: 'With Family',
+    icon: '👨‍👩‍👧',
     items: [
       { name: 'Family entertainment/games', category: 'essentials', quantity: 2, weather_dependent: false },
       { name: 'Child-friendly snacks', category: 'essentials', quantity: 5, weather_dependent: false },
@@ -295,8 +309,8 @@ export const DEFAULT_COMPANION_LISTS = {
       { name: 'Emergency contact information', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Family activity research', category: 'essentials', quantity: 1, weather_dependent: false },
       { name: 'Extra clothing for kids', category: 'clothing', quantity: 2, weather_dependent: false },
-    ]
-  }
+    ],
+  },
 };
 
 // Expanded tip lists
@@ -321,7 +335,7 @@ export const DEFAULT_TIP_LISTS = {
     'Pack medications in carry-on',
     'Check public transport options',
     'Prepare emergency contact list',
-    'Download translation apps if needed'
+    'Download translation apps if needed',
   ],
   before_leaving: [
     'Check all windows are closed and locked',
@@ -343,8 +357,8 @@ export const DEFAULT_TIP_LISTS = {
     'Verify accommodation address',
     'Keep emergency cash accessible',
     'Leave itinerary with trusted contact',
-    'Do final weather check for destination'
-  ]
+    'Do final weather check for destination',
+  ],
 };
 
 /**
@@ -355,7 +369,7 @@ export function getAllDefaultLists() {
     activities: DEFAULT_ACTIVITY_LISTS,
     accommodation: DEFAULT_ACCOMMODATION_LISTS,
     companions: DEFAULT_COMPANION_LISTS,
-    tips: DEFAULT_TIP_LISTS
+    tips: DEFAULT_TIP_LISTS,
   };
 }
 
@@ -366,35 +380,38 @@ export function createDefaultListsForUser(userId) {
   const lists = [];
   
   // Add activity lists
-  Object.entries(DEFAULT_ACTIVITY_LISTS).forEach(([category, listData]) => {
+  Object.entries(DEFAULT_ACTIVITY_LISTS).forEach(([listName, listData]) => {
     lists.push({
       ...listData,
+      list_name: listName,
       owner_id: userId,
       created_by_id: userId,
       created_by: 'system',
-      is_sample: true
+      is_sample: true,
     });
   });
   
   // Add accommodation lists
-  Object.entries(DEFAULT_ACCOMMODATION_LISTS).forEach(([category, listData]) => {
+  Object.entries(DEFAULT_ACCOMMODATION_LISTS).forEach(([listName, listData]) => {
     lists.push({
       ...listData,
+      list_name: listName,
       owner_id: userId,
       created_by_id: userId,
       created_by: 'system',
-      is_sample: true
+      is_sample: true,
     });
   });
   
   // Add companion lists
-  Object.entries(DEFAULT_COMPANION_LISTS).forEach(([category, listData]) => {
+  Object.entries(DEFAULT_COMPANION_LISTS).forEach(([listName, listData]) => {
     lists.push({
       ...listData,
+      list_name: listName,
       owner_id: userId,
       created_by_id: userId,
       created_by: 'system',
-      is_sample: true
+      is_sample: true,
     });
   });
   
@@ -416,6 +433,54 @@ export function createDefaultTipListsForUser(userId) {
       content,
       is_default: true,
       order: index,
-    }))
+    })),
   }));
+}
+
+/**
+ * Create default list types for database insertion
+ */
+export function createDefaultListTypesForUser(userId) {
+  const listTypes = [];
+  
+  // Add activity list types
+  Object.entries(DEFAULT_ACTIVITY_LISTS).forEach(([listName, listData]) => {
+    listTypes.push({
+      type_group: 'activity',
+      list_name: listName,
+      display_name: listData.display_name,
+      icon: listData.icon,
+      description: `Items needed for ${listData.display_name.toLowerCase()}`,
+      is_default: true,
+      created_by_id: userId,
+    });
+  });
+  
+  // Add accommodation list types
+  Object.entries(DEFAULT_ACCOMMODATION_LISTS).forEach(([listName, listData]) => {
+    listTypes.push({
+      type_group: 'accommodation',
+      list_name: listName,
+      display_name: listData.display_name,
+      icon: listData.icon,
+      description: `Items for staying at ${listData.display_name.toLowerCase()}`,
+      is_default: true,
+      created_by_id: userId,
+    });
+  });
+  
+  // Add companion list types
+  Object.entries(DEFAULT_COMPANION_LISTS).forEach(([listName, listData]) => {
+    listTypes.push({
+      type_group: 'companion',
+      list_name: listName,
+      display_name: listData.display_name,
+      icon: listData.icon,
+      description: `Items for traveling ${listData.display_name.toLowerCase()}`,
+      is_default: true,
+      created_by_id: userId,
+    });
+  });
+  
+  return listTypes;
 } 

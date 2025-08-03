@@ -1,23 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { List } from '@/api/entities';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
+import { List, ListType } from '@/api/entities';
 import { User } from '@/api/entities';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { toast } from '@/components/ui/use-toast';
-import { ArrowLeft, Loader2, Plus, Tag, Trash2 } from 'lucide-react';
-import { generateEmojiForItem } from '@/utils/emojiGenerator';
-import { EmojiPicker } from '@/components/ui/emoji-picker';
-import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { useSearchParams } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,13 +16,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from '@/components/ui/use-toast';
+import {
+  ArrowLeft,
+  Trash2,
+  Plus,
+  Tag,
+  Loader2,
+} from 'lucide-react';
+import { EmojiPicker } from '@/components/ui/emoji-picker';
+import { generateEmojiForItem } from '@/utils/emojiGenerator';
+import { createPageUrl } from '@/utils';
 import { withRetry } from '../components/utils/api-helpers';
 
 export default function ListEditorPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const listType = searchParams.get('type');
-  const categoryId = searchParams.get('category');
+  const listName = searchParams.get('list'); // Changed from 'category' to 'list'
 
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState(null);
@@ -42,42 +48,12 @@ export default function ListEditorPage() {
   const [editingName, setEditingName] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [listName, setListName] = useState(''); // Add this state for the list name
+  const [listDisplayName, setListDisplayName] = useState('');
+  const [selectedListType, setSelectedListType] = useState(null);
 
   const [newItemName, setNewItemName] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('essentials');
   const nameInputRef = useRef(null);
-
-  const listTypeDetails = {
-    activity: {
-      categories: [
-        { id: 'beach', label: 'Beach Trip', icon: '🏖️' },
-        { id: 'camping', label: 'Camping', icon: '🏕️' },
-        { id: 'climbing', label: 'Climbing', icon: '🧗' },
-        { id: 'hiking', label: 'Hiking', icon: '🥾' },
-        { id: 'partying', label: 'Party', icon: '🎉' },
-        { id: 'business', label: 'Business', icon: '💼' },
-        { id: 'sightseeing', label: 'Sightseeing', icon: '🏛️' },
-      ],
-    },
-    accommodation: {
-      categories: [
-        { id: 'hotel', label: 'Hotel', icon: '🏨' },
-        { id: 'camping', label: 'Camping', icon: '🏕️' },
-        { id: 'glamping', label: 'Glamping', icon: '⛺' },
-        { id: 'couch_surfing', label: 'Couch Surfing', icon: '🛋️' },
-        { id: 'airbnb', label: 'Airbnb', icon: '🏠' },
-      ],
-    },
-    companion: {
-      categories: [
-        { id: 'alone', label: 'Solo Travel', icon: '🧍' },
-        { id: 'spouse', label: 'With Partner', icon: '💑' },
-        { id: 'friends', label: 'With Friends', icon: '👥' },
-        { id: 'family', label: 'With Family', icon: '👨‍👩‍👧' },
-      ],
-    },
-  };
 
   const itemCategories = [
     { value: 'clothing', label: 'Clothing' },
@@ -87,20 +63,18 @@ export default function ListEditorPage() {
     { value: 'essentials', label: 'Essentials' },
   ];
 
-  const selectedCategory = listTypeDetails[listType]?.categories.find(c => c.id === categoryId);
-
-  // Get default icon for the list type/category
+  // Get default icon for the list type
   const getDefaultIcon = () => {
-    return selectedCategory?.icon || '📋';
+    return selectedListType?.icon || '📋';
   };
 
   useEffect(() => {
-    if (listType && categoryId) {
+    if (listType && listName) {
       loadList();
     } else {
       navigate(createPageUrl('ListManager'));
     }
-  }, [listType, categoryId]);
+  }, [listType, listName]);
 
   useEffect(() => {
     if (editingName && nameInputRef.current) {
@@ -125,6 +99,12 @@ export default function ListEditorPage() {
   const loadList = async () => {
     setLoading(true);
     try {
+      // Load list types from database
+      const types = await ListType.getByTypeGroup(listType);
+      
+      const foundListType = types.find(t => t.list_name === listName);
+      setSelectedListType(foundListType);
+
       const user = await withRetry(() => User.me());
       const lists = await withRetry(() =>
         List.filter({
@@ -133,31 +113,31 @@ export default function ListEditorPage() {
         }),
       );
 
-      const existingList = lists.find(l => l.category === categoryId);
+      const existingList = lists.find(l => l.list_name === listName);
 
       if (existingList) {
         setList(existingList);
         setItems(existingList.items || []);
-        setListName(existingList.name || selectedCategory?.label);
-        setSelectedIcon(existingList.icon || selectedCategory?.icon);
+        setListDisplayName(existingList.name || foundListType?.display_name);
+        setSelectedIcon(existingList.icon || foundListType?.icon);
       } else {
         const newList = {
           list_type: listType,
-          category: categoryId,
+          list_name: listName,
           items: [],
           owner_id: user.id,
-          name: selectedCategory?.label,
+          name: foundListType?.display_name,
         };
         setList(newList);
-        setListName(selectedCategory?.label);
         setItems([]);
-        setSelectedIcon(selectedCategory?.icon);
+        setListDisplayName(foundListType?.display_name || '');
+        setSelectedIcon(foundListType?.icon || '📋');
       }
     } catch (error) {
       console.error('Error loading list:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load list. Please try again in a moment.',
+        description: 'Failed to load list. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -174,8 +154,8 @@ export default function ListEditorPage() {
       } else {
         const newList = await List.create({
           list_type: listType,
-          category: categoryId,
-          name: listName,
+          list_name: listName,
+          name: listDisplayName,
           items: updatedItems,
           owner_id: list.owner_id,
           is_default: false,
@@ -260,14 +240,14 @@ export default function ListEditorPage() {
           ...prev,
           name: newName,
         }));
-        setListName(newName);
+        setListDisplayName(newName);
 
         toast({
           title: 'Success',
           description: 'List name updated',
         });
       } else {
-        setListName(newName);
+        setListDisplayName(newName);
       }
     } catch (error) {
       console.error('Error updating list name:', error);
@@ -362,7 +342,7 @@ export default function ListEditorPage() {
                   {editingName ? (
                     <Input
                       ref={nameInputRef}
-                      defaultValue={listName}
+                      defaultValue={listDisplayName}
                       onBlur={handleNameBlur}
                       onKeyDown={handleNameKeyDown}
                       className="text-xl font-bold h-8 py-0"
@@ -373,7 +353,7 @@ export default function ListEditorPage() {
                       className="text-xl font-bold cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
                       onClick={() => setEditingName(true)}
                     >
-                      {listName}
+                      {listDisplayName}
                     </h1>
                   )}
                 </div>

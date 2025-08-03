@@ -1,6 +1,9 @@
-import { TipList, User, List } from './entities';
-import { createDefaultListsForUser, createDefaultTipListsForUser } from '../utils/defaultListData';
-import { generateEmojisForItems } from '../utils/emojiGenerator';
+import { TipList, User, List, ListType } from './entities';
+import {
+  createDefaultListsForUser,
+  createDefaultTipListsForUser,
+  createDefaultListTypesForUser,
+} from '../utils/defaultListData';
 
 /**
  * Service for initializing and managing user's default lists
@@ -13,15 +16,18 @@ export class ListInitializationService {
     try {
       console.log('🚀 Initializing default lists for user:', userId);
       
+      // First, ensure default list types exist
+      await this.ensureDefaultListTypes(userId);
+      
       // Create default lists using the List service (custom lists table)
       const defaultBaseLists = createDefaultListsForUser(userId);
       for (const listData of defaultBaseLists) {
         // Convert to custom list format for the lists table
         const customListData = {
           list_type: listData.list_type,
-          category: listData.category,
-          name: `${listData.category.charAt(0).toUpperCase() + 
-            listData.category.slice(1)} Essentials`,
+          list_name: listData.list_name,
+          name: `${listData.display_name} Essentials`,
+          icon: listData.icon,
           items: listData.items,
           owner_id: listData.owner_id,
           created_by_id: listData.created_by_id,
@@ -50,6 +56,38 @@ export class ListInitializationService {
   }
 
   /**
+   * Ensure default list types exist in the database
+   */
+  static async ensureDefaultListTypes(userId) {
+    try {
+      console.log('🔧 Ensuring default list types exist');
+      
+      const defaultListTypes = createDefaultListTypesForUser(userId);
+      
+      for (const listTypeData of defaultListTypes) {
+        // Check if this list type already exists
+        const existing = await ListType.findMany({
+          type_group: listTypeData.type_group,
+          list_name: listTypeData.list_name,
+          is_default: true,
+        });
+        
+        if (existing.length === 0) {
+          console.log(
+            `Creating default list type: ${listTypeData.type_group}/${listTypeData.list_name}`,
+          );
+          await ListType.create(listTypeData);
+        }
+      }
+      
+      console.log('✅ Default list types ensured');
+    } catch (error) {
+      console.error('❌ Error ensuring default list types:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Reset user's lists to default values
    */
   static async resetUserListsToDefaults(userId) {
@@ -69,15 +107,18 @@ export class ListInitializationService {
         await TipList.delete(list.id);
       }
       
+      // Ensure default list types exist
+      await this.ensureDefaultListTypes(userId);
+      
       // Recreate default lists using the List service (custom lists table)
       const defaultBaseLists = createDefaultListsForUser(userId);
       for (const listData of defaultBaseLists) {
         // Convert to custom list format for the lists table
         const customListData = {
           list_type: listData.list_type,
-          category: listData.category,
-          name: `${listData.category.charAt(0).toUpperCase() + 
-            listData.category.slice(1)} Essentials`,
+          list_name: listData.list_name,
+          name: `${listData.display_name} Essentials`,
+          icon: listData.icon,
           items: listData.items,
           owner_id: listData.owner_id,
           created_by_id: listData.created_by_id,

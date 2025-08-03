@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BaseList } from '@/api/entities';
+import { BaseList, ListType } from '@/api/entities';
 import { User } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,52 +35,16 @@ export default function ListManagerPage() {
     accommodation: [],
     companion: [],
   });
+  const [listTypes, setListTypes] = useState({
+    activity: { name: 'Activities', description: 'Items needed for specific activities', icon: <Activity className="w-5 h-5" />, categories: [] },
+    accommodation: { name: 'Accommodation', description: "Items based on where you're staying", icon: <Home className="w-5 h-5" />, categories: [] },
+    companion: { name: 'Travel Companions', description: "Items depending on who you're traveling with", icon: <Users className="w-5 h-5" />, categories: [] },
+  });
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [currentItems, setCurrentItems] = useState([]);
   const [newItemName, setNewItemName] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('essentials');
-
-  // Categories configuration with icons and descriptions
-  const listTypes = {
-    activity: {
-      name: 'Activities',
-      description: 'Items needed for specific activities',
-      icon: <Activity className="w-5 h-5" />,
-      categories: [
-        { id: 'beach', label: 'Beach Trip', icon: '🏖️' },
-        { id: 'camping', label: 'Camping', icon: '🏕️' },
-        { id: 'climbing', label: 'Climbing', icon: '🧗' },
-        { id: 'hiking', label: 'Hiking', icon: '🥾' },
-        { id: 'partying', label: 'Party', icon: '🎉' },
-        { id: 'business', label: 'Business', icon: '💼' },
-        { id: 'sightseeing', label: 'Sightseeing', icon: '🏛️' },
-      ],
-    },
-    accommodation: {
-      name: 'Accommodation',
-      description: "Items based on where you're staying",
-      icon: <Home className="w-5 h-5" />,
-      categories: [
-        { id: 'hotel', label: 'Hotel', icon: '🏨' },
-        { id: 'camping', label: 'Camping', icon: '🏕️' },
-        { id: 'glamping', label: 'Glamping', icon: '⛺' },
-        { id: 'couch_surfing', label: 'Couch Surfing', icon: '🛋️' },
-        { id: 'airbnb', label: 'Airbnb', icon: '🏠' },
-      ],
-    },
-    companion: {
-      name: 'Travel Companions',
-      description: "Items depending on who you're traveling with",
-      icon: <Users className="w-5 h-5" />,
-      categories: [
-        { id: 'alone', label: 'Solo Travel', icon: '🧍' },
-        { id: 'spouse', label: 'With Partner', icon: '💑' },
-        { id: 'friends', label: 'With Friends', icon: '👥' },
-        { id: 'family', label: 'With Family', icon: '👨‍👩‍👧' },
-      ],
-    },
-  };
 
   const itemCategories = [
     { value: 'clothing', label: 'Clothing' },
@@ -110,7 +74,7 @@ export default function ListManagerPage() {
 
   useEffect(() => {
     if (selectedCategory) {
-      const list = baseLists[activeType].find(l => l.category === selectedCategory);
+      const list = baseLists[activeType].find(l => l.list_name === selectedCategory);
       setCurrentItems(list?.items || []);
     } else {
       setCurrentItems([]);
@@ -125,6 +89,45 @@ export default function ListManagerPage() {
       if (!user.has_initialized_base_lists) {
         await initializeUser();
       }
+
+      // Load dynamic list types from database
+      const activityTypes = await ListType.getByTypeGroup('activity');
+      const accommodationTypes = await ListType.getByTypeGroup('accommodation');
+      const companionTypes = await ListType.getByTypeGroup('companion');
+
+      // Update list types with dynamic data
+      setListTypes({
+        activity: {
+          name: 'Activities',
+          description: 'Items needed for specific activities',
+          icon: <Activity className="w-5 h-5" />,
+          categories: activityTypes.map(type => ({
+            id: type.list_name,
+            label: type.display_name,
+            icon: type.icon,
+          })),
+        },
+        accommodation: {
+          name: 'Accommodation',
+          description: "Items based on where you're staying",
+          icon: <Home className="w-5 h-5" />,
+          categories: accommodationTypes.map(type => ({
+            id: type.list_name,
+            label: type.display_name,
+            icon: type.icon,
+          })),
+        },
+        companion: {
+          name: 'Travel Companions',
+          description: "Items depending on who you're traveling with",
+          icon: <Users className="w-5 h-5" />,
+          categories: companionTypes.map(type => ({
+            id: type.list_name,
+            label: type.display_name,
+            icon: type.icon,
+          })),
+        },
+      });
 
       const lists = await BaseList.filter({ owner_id: user.id });
 
@@ -156,7 +159,7 @@ export default function ListManagerPage() {
   const autoSave = async updatedItems => {
     try {
       const user = await User.me();
-      const existingList = baseLists[activeType].find(l => l.category === selectedCategory);
+      const existingList = baseLists[activeType].find(l => l.list_name === selectedCategory);
 
       if (existingList) {
         await BaseList.update(existingList.id, {
@@ -165,7 +168,7 @@ export default function ListManagerPage() {
       } else {
         await BaseList.create({
           list_type: activeType,
-          category: selectedCategory,
+          list_name: selectedCategory,
           items: updatedItems,
           owner_id: user.id,
           is_sample: false,

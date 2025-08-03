@@ -73,7 +73,7 @@ const mockCustomLists = [
     id: '1',
     name: 'Beach Essentials',
     list_type: 'activity',
-    category: 'beach',
+    list_name: 'beach',
     icon: '🏖️',
     owner_id: 'dev-user-123',
     items: [
@@ -368,7 +368,7 @@ export class CustomListService {
       return mockCustomLists.filter(list => {
         if (filters.owner_id && list.owner_id !== filters.owner_id) return false;
         if (filters.list_type && list.list_type !== filters.list_type) return false;
-        if (filters.category && list.category !== filters.category) return false;
+
         return true;
       });
     }
@@ -380,9 +380,6 @@ export class CustomListService {
     }
     if (filters.list_type) {
       query = query.eq('list_type', filters.list_type);
-    }
-    if (filters.category) {
-      query = query.eq('category', filters.category);
     }
 
     const { data, error } = await query;
@@ -456,11 +453,190 @@ export class CustomListService {
   }
 }
 
+export class ListTypeService {
+  static async findMany(filters = {}) {
+    if (isDev) {
+      console.log('🚧 Dev mode: Using mock list types');
+      // Return mock list types based on the actual structure
+      return [
+        { id: '1', name: 'Beach Trip', parent_type: 'activity', icon: '🏖️', display_name: 'Beach Trip' },
+        { id: '2', name: 'Camping', parent_type: 'activity', icon: '🏕️', display_name: 'Camping' },
+        { id: '3', name: 'Hotel', parent_type: 'accommodation', icon: '🏨', display_name: 'Hotel' },
+        { id: '4', name: 'Solo Travel', parent_type: 'companion', icon: '🧍', display_name: 'Solo Travel' },
+      ].filter(item => {
+        return Object.entries(filters).every(([key, value]) => item[key] === value);
+      });
+    }
+
+    let query = supabase.from('list_categories').select(`
+      id,
+      name,
+      icon,
+      is_active,
+      sort_order,
+      list_types!inner(name)
+    `);
+
+    // Apply filters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (key === 'type_group') {
+          // Filter by the parent list_type name
+          query = query.eq('list_types.name', value);
+        } else {
+          query = query.eq(key, value);
+        }
+      }
+    });
+
+    query = query.order('sort_order', { ascending: true });
+
+    const { data, error } = await query;
+    if (error) throw error;
+    
+    // Transform data to match expected format
+    return (data || []).map(item => ({
+      id: item.id,
+      list_name: item.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+      display_name: item.name,
+      icon: item.icon,
+      type_group: item.list_types.name,
+      is_active: item.is_active,
+      sort_order: item.sort_order,
+    }));
+  }
+
+  static async findOne(id) {
+    if (isDev) {
+      console.log('🚧 Dev mode: Using mock list type');
+      const mockTypes = await this.findMany();
+      return mockTypes.find(item => item.id === id) || null;
+    }
+
+    const { data, error } = await supabase
+      .from('list_categories')
+      .select(`
+        id,
+        name,
+        icon,
+        is_active,
+        sort_order,
+        list_types!inner(name)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // No rows found
+      throw error;
+    }
+
+    // Transform data to match expected format
+    return {
+      id: data.id,
+      list_name: data.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+      display_name: data.name,
+      icon: data.icon,
+      type_group: data.list_types.name,
+      is_active: data.is_active,
+      sort_order: data.sort_order,
+    };
+  }
+
+  static async create(listTypeData) {
+    if (isDev) {
+      console.log('🚧 Dev mode: Mock creating list type:', listTypeData);
+      return { ...listTypeData, id: `mock-${Date.now()}` };
+    }
+
+    // For creating new list types, we'd need to:
+    // 1. Find the parent list_type by name
+    // 2. Insert into list_categories with the parent ID
+    const { data: parentType, error: parentError } = await supabase
+      .from('list_types')
+      .select('id')
+      .eq('name', listTypeData.type_group)
+      .single();
+
+    if (parentError) throw parentError;
+
+    const { data, error } = await supabase
+      .from('list_categories')
+      .insert([{
+        name: listTypeData.display_name,
+        icon: listTypeData.icon,
+        list_type_id: parentType.id,
+        is_active: true,
+        sort_order: 999, // Add to end
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    // Transform response to match expected format
+    return {
+      id: data.id,
+      list_name: data.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+      display_name: data.name,
+      icon: data.icon,
+      type_group: listTypeData.type_group,
+      is_active: data.is_active,
+      sort_order: data.sort_order,
+    };
+  }
+
+  static async update(id, updates) {
+    if (isDev) {
+      console.log('🚧 Dev mode: Mock updating list type:', { id, updates });
+      return { id, ...updates };
+    }
+
+    const { data, error } = await supabase
+      .from('list_categories')
+      .update({
+        name: updates.display_name,
+        icon: updates.icon,
+        is_active: updates.is_active,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  static async delete(id) {
+    if (isDev) {
+      console.log('🚧 Dev mode: Mock deleting list type:', id);
+      return { id };
+    }
+
+    const { error } = await supabase
+      .from('list_categories')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return { id };
+  }
+
+  static async filter(filters) {
+    return this.findMany(filters);
+  }
+
+  static async getByTypeGroup(typeGroup) {
+    return this.findMany({ type_group: typeGroup });
+  }
+}
+
 // Export aliases for compatibility with existing code
 export const PackingList = PackingListService;
 export const BaseList = BaseListService;
 export const TipList = TipListService;
 export const CustomList = CustomListService;
 export const List = CustomListService; // For custom lists (lists table)
+export const ListType = ListTypeService; // For list types (list_categories table)
 
 export { User } from './auth';
