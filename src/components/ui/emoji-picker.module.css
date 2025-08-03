@@ -1,0 +1,74 @@
+/* Custom styles for emoji-mart integration */
+
+.emojiPicker {
+  --rgb-color: 34, 34, 34;
+  --rgb-accent: 59, 130, 246;
+  --rgb-background: 255, 255, 255;
+  --rgb-input: 255, 255, 255;
+  --rgb-border: 229, 231, 235;
+  
+  border-radius: 8px;
+  font-family: inherit;
+}
+
+/* Override emoji-mart's default styles */
+:global(.emoji-mart) {
+  border: none !important;
+  font-family: inherit !important;
+}
+
+:global(.emoji-mart-bar) {
+  border-color: rgb(var(--rgb-border)) !important;
+}
+
+:global(.emoji-mart-search input) {
+  border: 1px solid rgb(var(--rgb-border)) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  background: rgb(var(--rgb-input)) !important;
+  transition: border-color 0.2s ease !important;
+}
+
+:global(.emoji-mart-search input:focus) {
+  outline: none !important;
+  border-color: rgb(var(--rgb-accent)) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+:global(.emoji-mart-category-label) {
+  background: rgb(var(--rgb-background)) !important;
+  color: rgb(var(--rgb-color)) !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  padding: 8px 12px !important;
+}
+
+:global(.emoji-mart-emoji:hover) {
+  background: rgba(var(--rgb-accent), 0.1) !important;
+  border-radius: 4px !important;
+}
+
+:global(.emoji-mart-scroll) {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(var(--rgb-border), 0.5) transparent !important;
+}
+
+:global(.emoji-mart-scroll::-webkit-scrollbar) {
+  width: 6px !important;
+}
+
+:global(.emoji-mart-scroll::-webkit-scrollbar-track) {
+  background: transparent !important;
+}
+
+:global(.emoji-mart-scroll::-webkit-scrollbar-thumb) {
+  background: rgba(var(--rgb-border), 0.5) !important;
+  border-radius: 3px !important;
+}
+
+:global(.emoji-mart-scroll::-webkit-scrollbar-thumb:hover) {
+  background: rgba(var(--rgb-border), 0.8) !important;
+} 

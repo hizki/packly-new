@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { generateEmojiForItem } from '@/utils/emojiGenerator';
+import { EmojiPicker } from '@/components/ui/emoji-picker';
 
 export default function BaseListEditor({ lists, listType, categories, onUpdate }) {
   const [currentList, setCurrentList] = useState(null);
@@ -71,12 +73,14 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
   const handleAddItem = async () => {
     if (!itemName.trim()) return;
 
+    const emoji = await generateEmojiForItem(itemName, itemCategory);
     const newItem = {
       name: itemName,
       category: itemCategory,
       quantity: 1,
       weather_dependent: false,
       weather_type: 'any',
+      emoji,
     };
 
     const updatedItems = [...items, newItem];
@@ -95,6 +99,16 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
   const handleRemoveItem = async index => {
     const updatedItems = [...items];
     updatedItems.splice(index, 1);
+    setItems(updatedItems);
+    await autoSave(updatedItems);
+  };
+
+  const handleUpdateItemEmoji = async (index, newEmoji) => {
+    const updatedItems = [...items];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      emoji: newEmoji,
+    };
     setItems(updatedItems);
     await autoSave(updatedItems);
   };
@@ -154,13 +168,20 @@ export default function BaseListEditor({ lists, listType, categories, onUpdate }
               {items.map((item, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded"
                 >
-                  <div>
-                    <span className="font-medium">{item.name}</span>
-                    <span className="text-sm text-gray-500 ml-2">
-                      ({item.category}, x{item.quantity})
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <EmojiPicker
+                      value={item.emoji || '📦'}
+                      onChange={(emoji) => handleUpdateItemEmoji(index, emoji)}
+                      className="flex-shrink-0"
+                    />
+                    <div>
+                      <span className="font-medium">{item.name}</span>
+                      <span className="text-sm text-gray-500 ml-2">
+                        ({item.category}, x{item.quantity})
+                      </span>
+                    </div>
                   </div>
                   <Button
                     variant="ghost"

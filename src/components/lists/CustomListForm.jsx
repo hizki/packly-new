@@ -1,107 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { X, Check, Plus } from 'lucide-react';
+import { X, Check } from 'lucide-react';
+import { EmojiPicker } from '@/components/ui/emoji-picker';
 
 export default function CustomListForm({ listType, onCancel, onSave }) {
   const [name, setName] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
   const formRef = useRef(null);
-  const emojiPickerRef = useRef(null);
 
-  // Manually implement click away detection
-  useEffect(() => {
-    const handleClickOutside = event => {
-      if (
-        showEmojiPicker &&
-        emojiPickerRef.current &&
-        !emojiPickerRef.current.contains(event.target)
-      ) {
-        setShowEmojiPicker(false);
-      }
+  // Get default emoji for list type
+  const getDefaultEmoji = () => {
+    const defaults = {
+      activity: '🏃‍♂️',
+      accommodation: '🏨',
+      companion: '👥',
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showEmojiPicker]);
-
-  // Map of emojis for each list type
-  const emojiMap = {
-    activity: [
-      '🏊‍♂️',
-      '🚴‍♀️',
-      '🧘‍♀️',
-      '🏂',
-      '🏃‍♂️',
-      '🚣‍♀️',
-      '⚽',
-      '🎾',
-      '🏸',
-      '🏹',
-      '🤿',
-      '🎪',
-      '🎨',
-      '🎰',
-      '🎲',
-      '🧠',
-      '🎬',
-      '🎮',
-      '🎧',
-      '📸',
-      '🔭',
-      '🌱',
-      '🧩',
-      '🎭',
-      '🍳',
-      '🎯',
-    ],
-    accommodation: [
-      '🏡',
-      '🛖',
-      '🏘️',
-      '🏚️',
-      '🏙️',
-      '🛏️',
-      '🏰',
-      '⛩️',
-      '⛪',
-      '🏢',
-      '🏨',
-      '🌄',
-      '🏔️',
-      '🗺️',
-      '🏕️',
-      '🌃',
-      '🏦',
-      '🏛️',
-      '🏬',
-      '🗼',
-    ],
-    companion: [
-      '👨‍👩‍👦',
-      '👨‍👨‍👧‍👧',
-      '👩‍👩‍👦‍👦',
-      '👶',
-      '🧒',
-      '👴',
-      '👵',
-      '🐕',
-      '🐈',
-      '👥',
-      '👫',
-      '👬',
-      '👭',
-      '👪',
-      '🐶',
-      '🦮',
-      '🐱',
-      '🐰',
-    ],
+    return defaults[listType] || '📋';
   };
 
   // Default categories by list type
@@ -238,43 +155,14 @@ export default function CustomListForm({ listType, onCancel, onSave }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
-          <div className="relative">
-            <div
-              className="border rounded-md p-3 flex justify-between items-center cursor-pointer"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            >
-              {selectedEmoji ? (
-                <span className="text-2xl">{selectedEmoji}</span>
-              ) : (
-                <span className="text-gray-500">Select an emoji</span>
-              )}
-              <Plus className="h-4 w-4 text-gray-400" />
-            </div>
-
-            {showEmojiPicker && (
-              <div
-                ref={emojiPickerRef}
-                className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg mt-1 p-2 z-10"
-              >
-                <div className="grid grid-cols-8 gap-1">
-                  {emojiMap[listType].map((emoji, index) => (
-                    <div
-                      key={index}
-                      className={`p-2 text-xl text-center cursor-pointer rounded hover:bg-gray-100 ${
-                        selectedEmoji === emoji ? 'bg-blue-50' : ''
-                      }`}
-                      onClick={() => {
-                        setSelectedEmoji(emoji);
-                        setShowEmojiPicker(false);
-                      }}
-                    >
-                      {emoji}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
+          <div className="flex items-center gap-2">
+            <EmojiPicker
+              value={selectedEmoji || getDefaultEmoji()}
+              onChange={setSelectedEmoji}
+              className="text-2xl"
+            />
+            <span className="text-sm text-gray-500">Click to select an emoji for your list</span>
           </div>
         </div>
 

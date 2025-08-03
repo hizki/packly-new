@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import AnimatedCheckbox from '../animated/AnimatedCheckbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmojiPicker } from '@/components/ui/emoji-picker';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 
 const AnimatedListItem = ({
   item,
   onToggle,
   onUpdateQuantity,
+  onUpdateEmoji,
   onDelete,
   isEditMode = false,
   isPending = false,
@@ -34,6 +36,14 @@ const AnimatedListItem = ({
         disabled={isPending}
         className="mr-3 flex-shrink-0"
       />
+
+      <div className="flex items-center gap-2 mr-2">
+        <EmojiPicker
+          value={item.emoji || '📦'}
+          onChange={onUpdateEmoji}
+          className="flex-shrink-0"
+        />
+      </div>
 
       <div className="flex-1">
         <motion.span

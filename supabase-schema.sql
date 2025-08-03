@@ -48,6 +48,7 @@ CREATE TABLE lists (
   list_type TEXT NOT NULL,
   category TEXT,
   name TEXT,
+  icon TEXT,
   items JSONB NOT NULL DEFAULT '[]',
   owner_id UUID REFERENCES auth.users(id),
   is_default BOOLEAN DEFAULT false,

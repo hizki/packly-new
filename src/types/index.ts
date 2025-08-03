@@ -76,6 +76,7 @@ export interface PackingItem {
   quantity: number;
   is_packed: boolean;
   weather_dependent: boolean;
+  emoji?: string;
 }
 
 /** Accommodation types */

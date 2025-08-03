@@ -3,6 +3,8 @@
  * Comprehensive packing suggestions based on activity, accommodation, and companion types
  */
 
+import { generateEmojisForItemsSync } from './emojiGenerator';
+
 // Activity-based packing lists
 export const DEFAULT_ACTIVITY_LISTS = {
   beach: {

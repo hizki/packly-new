@@ -1,5 +1,6 @@
 import { TipList, User, List } from './entities';
 import { createDefaultListsForUser, createDefaultTipListsForUser } from '../utils/defaultListData';
+import { generateEmojisForItems } from '../utils/emojiGenerator';
 
 /**
  * Service for initializing and managing user's default lists

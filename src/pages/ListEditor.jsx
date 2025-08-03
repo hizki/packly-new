@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
 import { ArrowLeft, Loader2, Plus, Tag, Trash2 } from 'lucide-react';
+import { generateEmojiForItem } from '@/utils/emojiGenerator';
+import { EmojiPicker } from '@/components/ui/emoji-picker';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useSearchParams } from 'react-router-dom';
@@ -26,7 +28,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { withRetry } from '../components/utils/api-helpers';
 
 export default function ListEditorPage() {
@@ -88,87 +89,10 @@ export default function ListEditorPage() {
 
   const selectedCategory = listTypeDetails[listType]?.categories.find(c => c.id === categoryId);
 
-  // List of emojis for the current list type
-  const availableEmojis = listTypeDetails[listType]?.categories.map(c => c.icon) || [];
-
-  // Add more emojis related to each type
-  const additionalEmojis = {
-    activity: [
-      '🏄‍♂️',
-      '🚴‍♀️',
-      '🧘‍♀️',
-      '🏂',
-      '🏊‍♂️',
-      '🚶‍♀️',
-      '⛷️',
-      '🛹',
-      '🎣',
-      '🎯',
-      '🎭',
-      '🏓',
-      '🏃‍♂️',
-      '🚣‍♀️',
-      '⚽',
-      '🎾',
-      '🏸',
-      '🏹',
-      '🤿',
-      '🎪',
-      '🎨',
-      '🎰',
-      '🎲',
-    ],
-    accommodation: [
-      '🏡',
-      '🛖',
-      '🏘️',
-      '🏚️',
-      '🏙️',
-      '🛏️',
-      '🏰',
-      '⛩️',
-      '⛪',
-      '🏢',
-      '🏪',
-      '🏨',
-      '🌄',
-      '🏔️',
-      '🗺️',
-      '🎪',
-      '🏕️',
-      '🌃',
-      '🏦',
-      '🏛️',
-      '🏭',
-      '🏬',
-      '🗼',
-    ],
-    companion: [
-      '👨‍👩‍👦',
-      '👨‍👨‍👧‍👧',
-      '👩‍👩‍👦‍👦',
-      '👶',
-      '🧒',
-      '👴',
-      '👵',
-      '🐕',
-      '🐈',
-      '👥',
-      '👫',
-      '👬',
-      '👭',
-      '🧑‍🤝‍🧑',
-      '👯',
-      '👯‍♂️',
-      '👪',
-      '🐶',
-      '🦮',
-      '🐱',
-      '🐰',
-    ],
+  // Get default icon for the list type/category
+  const getDefaultIcon = () => {
+    return selectedCategory?.icon || '📋';
   };
-
-  const allEmojis = [...new Set([...availableEmojis, ...(additionalEmojis[listType] || [])])];
 
   useEffect(() => {
     if (listType && categoryId) {
@@ -271,12 +195,14 @@ export default function ListEditorPage() {
   const handleAddItem = async () => {
     if (!newItemName.trim()) return;
 
+    const emoji = await generateEmojiForItem(newItemName, newItemCategory);
     const newItem = {
       name: newItemName,
       category: newItemCategory,
       quantity: 1,
       weather_dependent: false,
       weather_type: 'any',
+      emoji,
     };
 
     const updatedItems = [...items, newItem];
@@ -287,6 +213,16 @@ export default function ListEditorPage() {
 
   const handleRemoveItem = async index => {
     const updatedItems = items.filter((_, i) => i !== index);
+    setItems(updatedItems);
+    await autoSave(updatedItems);
+  };
+
+  const handleUpdateItemEmoji = async (index, newEmoji) => {
+    const updatedItems = [...items];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      emoji: newEmoji,
+    };
     setItems(updatedItems);
     await autoSave(updatedItems);
   };
@@ -417,26 +353,11 @@ export default function ListEditorPage() {
               </Button>
               <div>
                 <div className="flex items-center gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <span className="text-2xl cursor-pointer hover:bg-gray-100 p-1 rounded-md">
-                        {selectedIcon || selectedCategory?.icon}
-                      </span>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-72">
-                      <div className="grid grid-cols-6 gap-2">
-                        {allEmojis.map((emoji, i) => (
-                          <div
-                            key={i}
-                            className="p-2 text-xl cursor-pointer text-center hover:bg-gray-100 rounded"
-                            onClick={() => handleEmojiSelect(emoji)}
-                          >
-                            {emoji}
-                          </div>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                  <EmojiPicker
+                    value={selectedIcon || getDefaultIcon()}
+                    onChange={handleEmojiSelect}
+                    className="text-2xl"
+                  />
 
                   {editingName ? (
                     <Input
@@ -529,6 +450,13 @@ export default function ListEditorPage() {
                 className="flex items-center justify-between p-3 bg-white rounded-lg border"
               >
                 <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <EmojiPicker
+                      value={item.emoji || '📦'}
+                      onChange={(emoji) => handleUpdateItemEmoji(index, emoji)}
+                      className="flex-shrink-0"
+                    />
+                  </div>
                   <div className="flex-1">
                     <p className="font-medium">{item.name}</p>
                     <div className="flex items-center gap-2 mt-1">

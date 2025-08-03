@@ -48,6 +48,7 @@ import FlightDetailsDialog from '../components/flights/FlightDetailsDialog';
 import FlightDetailsCard from '../components/flights/FlightDetailsCard';
 import { TipList } from '@/api/entities';
 import TipListSection from '../components/tips/TipListSection';
+import { generateEmojiForItem } from '@/utils/emojiGenerator';
 
 export default function ListDetailPage() {
   const navigate = useNavigate();
@@ -152,7 +153,41 @@ export default function ListDetailPage() {
           return;
         }
 
-        setList(list);
+        // Generate emojis for items that don't have them
+        const itemsWithEmojis = await Promise.all(
+          (list.items || []).map(async item => {
+            if (!item.emoji) {
+              const emoji = await generateEmojiForItem(
+                item.name, 
+                item.category, 
+                list.activities || [],
+              );
+              return { ...item, emoji };
+            }
+            return item;
+          }),
+        );
+
+        // If any items were missing emojis, update the list
+        const missingEmojiCount = itemsWithEmojis.filter(
+          (item, index) => item.emoji !== list.items[index]?.emoji,
+        ).length;
+        
+        if (missingEmojiCount > 0) {
+          const updatedList = { ...list, items: itemsWithEmojis };
+          setList(updatedList);
+          
+          // Update in database
+          try {
+            await PackingList.update(list.id, { items: itemsWithEmojis });
+            console.log(`✨ Generated ${missingEmojiCount} emojis for existing items`);
+          } catch (error) {
+            console.warn('Failed to update emojis in database:', error);
+          }
+        } else {
+          setList(list);
+        }
+        
         // Initialize collapsed state for complete categories
         initializeCollapsedState(list);
       } else {
@@ -274,7 +309,12 @@ export default function ListDetailPage() {
     }
 
     try {
-      const updatedItems = [...(list.items || []), newItem];
+      const emoji = await generateEmojiForItem(newItem.name, newItem.category, list.activities);
+      const itemWithEmoji = {
+        ...newItem,
+        emoji,
+      };
+      const updatedItems = [...(list.items || []), itemWithEmoji];
 
       await PackingList.update(list.id, { items: updatedItems });
 
@@ -324,6 +364,26 @@ export default function ListDetailPage() {
       });
     } catch (error) {
       console.error('Error updating item quantity:', error);
+    }
+  };
+
+  const handleUpdateItemEmoji = async (itemIndex, newEmoji) => {
+    if (!list) return;
+
+    const updatedItems = [...list.items];
+    updatedItems[itemIndex] = {
+      ...updatedItems[itemIndex],
+      emoji: newEmoji,
+    };
+
+    try {
+      await PackingList.update(list.id, { items: updatedItems });
+      setList({
+        ...list,
+        items: updatedItems,
+      });
+    } catch (error) {
+      console.error('Error updating item emoji:', error);
     }
   };
 
@@ -920,6 +980,9 @@ export default function ListDetailPage() {
                                 onToggle={() => toggleItemPacked(itemIndex)}
                                 onUpdateQuantity={quantity =>
                                   handleUpdateItemQuantity(itemIndex, quantity)
+                                }
+                                onUpdateEmoji={emoji =>
+                                  handleUpdateItemEmoji(itemIndex, emoji)
                                 }
                                 onDelete={
                                   isEditMode ? () => handleRemoveItem(itemIndex) : undefined

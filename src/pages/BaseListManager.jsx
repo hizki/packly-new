@@ -384,6 +384,9 @@ export default function ListManagerPage() {
                           className="flex items-center justify-between p-3 bg-white rounded-lg border"
                         >
                           <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">{item.emoji || '📦'}</span>
+                            </div>
                             <div className="flex-1">
                               <p className="font-medium">{item.name}</p>
                               <div className="flex items-center gap-2 mt-1">

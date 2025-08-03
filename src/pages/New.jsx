@@ -29,6 +29,7 @@ import { addDays } from 'date-fns';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { fetchWeatherForDate } from '@/services/weatherService';
+import { generateEmojisForItems } from '@/utils/emojiGenerator';
 import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css'; // main css file
 import 'react-date-range/dist/theme/default.css'; // theme css file
@@ -1352,9 +1353,12 @@ export default function NewListPage() {
         }
       });
 
+      // Generate emojis for all items
+      const itemsWithEmojis = await generateEmojisForItems(uniqueItems, formData.activities);
+
       setFormData(prev => ({
         ...prev,
-        items: uniqueItems,
+        items: itemsWithEmojis,
       }));
 
       const generatedName = generateListName();
@@ -1414,9 +1418,13 @@ export default function NewListPage() {
           weather_dependent: false,
         },
       ];
+      
+      // Generate emojis for fallback items
+      const fallbackItemsWithEmojis = await generateEmojisForItems(fallbackItems, formData.activities);
+      
       setFormData(prev => ({
         ...prev,
-        items: fallbackItems,
+        items: fallbackItemsWithEmojis,
       }));
       setMissingInfoWarnings(['Error generating suggestions - using basic fallback items']);
       const generatedName = generateListName();

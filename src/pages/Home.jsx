@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PackingList } from '@/api/entities';
 import { User } from '@/api/entities';
 import { TipList } from '@/api/entities';
@@ -11,6 +11,7 @@ import { format, differenceInDays } from 'date-fns';
 import LottieSpinner from '../components/ui/lottie-spinner';
 import { toast } from '@/components/ui/use-toast';
 import { withRetry } from '../components/utils/api-helpers';
+import { EmojiTest } from '../components/ui/emoji-test';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -222,6 +223,11 @@ export default function HomePage() {
             Never forget a thing. Create smart packing lists tailored to your trips.
           </p>
 
+          {/* Temporary emoji testing */}
+          <div className="mb-8">
+            <EmojiTest />
+          </div>
+
           {upcomingTrip && (
             <Card className="mb-8 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
               <CardContent className="p-6">
@@ -232,7 +238,7 @@ export default function HomePage() {
                     </div>
                     <div className="text-left">
                       <h3 className="font-bold text-lg">
-                        Get Ready! You're traveling{' '}
+                        Get Ready! You&apos;re traveling{' '}
                         {getDaysUntil(upcomingTrip.destinations[0].start_date)}
                       </h3>
                       <div className="flex items-center gap-2 mt-1">
