@@ -945,23 +945,39 @@ export default function NewListPage() {
           const allItemsFromLists = [];
 
           // Fetch items from each selected list
+          console.log('🔍 Selected list names:', allSelectedListNames);
+          
           for (const listName of allSelectedListNames) {
             try {
-              // First try to find in user's custom lists
-              const customLists = await BaseList.filter({
+              console.log(`🔎 Looking for list with list_name: "${listName}"`);
+              
+              // First try to find in user's custom lists (lists table)
+              const customLists = await List.filter({
                 owner_id: user.id,
-                list_name: listName,
+                list_type: 'activity', // Also filter by type to be more specific
               });
-
-              if (customLists.length > 0) {
-                allItemsFromLists.push(...customLists[0].items);
+              
+              console.log('📋 All user activity lists:', customLists.map(l => ({ 
+                name: l.name, 
+                list_name: l.list_name, 
+                itemCount: l.items?.length || 0 
+              })));
+              
+              // Find matching list by list_name
+              const matchingList = customLists.find(l => l.list_name === listName);
+              
+              if (matchingList) {
+                console.log(`✅ Found matching list: "${matchingList.name}" with ${matchingList.items?.length || 0} items`);
+                allItemsFromLists.push(...(matchingList.items || []));
               } else {
-                // Fallback to default/sample lists
+                console.log(`❌ No custom list found for "${listName}", trying fallback...`);
+                // Fallback to default/sample lists (base_lists table)
                 const sampleLists = await BaseList.filter({
                   list_name: listName,
                   is_sample: true,
                 });
                 if (sampleLists.length > 0) {
+                  console.log(`📦 Using fallback list with ${sampleLists[0].items?.length || 0} items`);
                   allItemsFromLists.push(...sampleLists[0].items);
                 }
               }
