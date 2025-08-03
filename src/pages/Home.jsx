@@ -11,7 +11,6 @@ import { format, differenceInDays } from 'date-fns';
 import LottieSpinner from '../components/ui/lottie-spinner';
 import { toast } from '@/components/ui/use-toast';
 import { withRetry } from '../components/utils/api-helpers';
-import { EmojiTest } from '../components/ui/emoji-test';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -222,11 +221,6 @@ export default function HomePage() {
           <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
             Never forget a thing. Create smart packing lists tailored to your trips.
           </p>
-
-          {/* Temporary emoji testing */}
-          <div className="mb-8">
-            <EmojiTest />
-          </div>
 
           {upcomingTrip && (
             <Card className="mb-8 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
