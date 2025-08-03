@@ -96,6 +96,7 @@ CREATE TABLE packing_lists (
 
 -- Enable Row Level Security
 ALTER TABLE list_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE list_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE base_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tip_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lists ENABLE ROW LEVEL SECURITY;
@@ -112,6 +113,11 @@ CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid
 CREATE POLICY "Public can view default list types" ON list_types FOR SELECT USING (is_default = true OR auth.uid() = created_by_id);
 CREATE POLICY "Auth users can create custom list types" ON list_types FOR INSERT WITH CHECK (auth.uid() = created_by_id);
 CREATE POLICY "Auth users can update own list types" ON list_types FOR UPDATE USING (auth.uid() = created_by_id);
+
+-- List categories: Public read, auth users can create and update
+CREATE POLICY "Public can view list categories" ON list_categories FOR SELECT USING (true);
+CREATE POLICY "Auth users can create list categories" ON list_categories FOR INSERT WITH CHECK (true);
+CREATE POLICY "Auth users can update list categories" ON list_categories FOR UPDATE USING (true);
 
 -- Base lists: Public read, auth users can create
 CREATE POLICY "Public can view base lists" ON base_lists FOR SELECT USING (true);

@@ -65,12 +65,11 @@ export class ListInitializationService {
       const defaultListTypes = createDefaultListTypesForUser(userId);
       
       for (const listTypeData of defaultListTypes) {
-        // Check if this list type already exists
-        const existing = await ListType.findMany({
-          type_group: listTypeData.type_group,
-          list_name: listTypeData.list_name,
-          is_default: true,
-        });
+        // Check if this list type already exists by display name
+        const allTypesInGroup = await ListType.getByTypeGroup(listTypeData.type_group);
+        const existing = allTypesInGroup.filter(
+          item => item.display_name === listTypeData.display_name,
+        );
         
         if (existing.length === 0) {
           console.log(

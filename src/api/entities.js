@@ -483,6 +483,13 @@ export class ListTypeService {
         if (key === 'type_group') {
           // Filter by the parent list_type name
           query = query.eq('list_types.name', value);
+        } else if (key === 'list_name') {
+          // Map list_name to the actual database column 'name'
+          // Convert from underscore format back to display format for matching
+          const displayName = value.split('_').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1),
+          ).join(' ');
+          query = query.eq('name', displayName);
         } else {
           query = query.eq(key, value);
         }
