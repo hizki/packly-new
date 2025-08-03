@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { List, ListType, User } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, Edit3, Trash2, ArrowLeft, Activity, Home, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -186,52 +186,57 @@ export default function ListManagerPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Main Tabs Interface */}
         <Tabs value={activeType} onValueChange={setActiveType} className="space-y-6">
-          <div className="bg-white rounded-lg border p-1">
-            <TabsList className="grid grid-cols-3 w-full">
-              <TabsTrigger value="activity" className="py-3">
-                <Activity className="w-4 h-4 mr-2" />
-                Activities
-              </TabsTrigger>
-              <TabsTrigger value="accommodation" className="py-3">
-                <Home className="w-4 h-4 mr-2" />
-                Accommodation
-              </TabsTrigger>
-              <TabsTrigger value="companion" className="py-3">
-                <Users className="w-4 h-4 mr-2" />
-                Companions
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid grid-cols-3 w-full bg-gray-50 p-1 rounded-lg h-auto">
+            <TabsTrigger 
+              value="activity" 
+              className="py-3 px-4 rounded-md font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 text-gray-600 hover:text-gray-900 flex items-center justify-center"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Activities</span>
+              <span className="sm:hidden">Activity</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="accommodation" 
+              className="py-3 px-4 rounded-md font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 text-gray-600 hover:text-gray-900 flex items-center justify-center"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Accommodation</span>
+              <span className="sm:hidden">Stay</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="companion" 
+              className="py-3 px-4 rounded-md font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 text-gray-600 hover:text-gray-900 flex items-center justify-center"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Companions</span>
+              <span className="sm:hidden">Companions</span>
+            </TabsTrigger>
+          </TabsList>
 
           {Object.entries(listTypes).map(([type, config]) => (
             <TabsContent key={type} value={type} className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
                   <h2 className="text-xl font-semibold flex items-center gap-2">
                     {config.icon}
                     {config.name}
                   </h2>
-                  <p className="text-gray-500 mt-1">{config.description}</p>
+                  <p className="text-gray-500 mt-1 text-sm sm:text-base">{config.description}</p>
                 </div>
                 <Button
                   onClick={() => {
                     setActiveType(type);
                     setShowCustomForm(true);
                   }}
-                  className="gap-2"
+                  className="gap-2 flex-shrink-0"
                 >
                   <Plus className="w-4 h-4" />
-                  Add Custom {config.name.slice(0, -1)}
+                  Add
                 </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                 {lists[type].map(list => {
-                   const categoryLabel = listTypes[type].categories.find(
-                     cat => cat.id === list.list_name,
-                   )?.label || list.list_name;
-
-                   return (
+                                 {lists[type].map(list => (
                      <Card key={list.id} className="hover:shadow-md transition-shadow">
                        <CardHeader className="pb-3">
                          <div className="flex items-start justify-between">
@@ -239,9 +244,6 @@ export default function ListManagerPage() {
                              <span className="text-xl">{list.icon || '📋'}</span>
                              <div>
                                <CardTitle className="text-base">{list.name}</CardTitle>
-                               <Badge variant="secondary" className="mt-1 text-xs">
-                                 {categoryLabel}
-                               </Badge>
                              </div>
                            </div>
                         <div className="flex gap-1">
@@ -270,8 +272,7 @@ export default function ListManagerPage() {
                       </p>
                                          </CardContent>
                    </Card>
-                   );
-                 })}
+                 ))}
 
                 {lists[type].length === 0 && (
                   <div className="col-span-full text-center py-12 text-gray-500">

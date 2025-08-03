@@ -329,10 +329,11 @@ export function createDefaultListsForUser(userId) {
   const lists = [];
   
   // Add activity lists
-  Object.entries(DEFAULT_ACTIVITY_LISTS).forEach(([listName, listData]) => {
+  Object.entries(DEFAULT_ACTIVITY_LISTS).forEach(([displayName, listData]) => {
     lists.push({
       ...listData,
-      list_name: listName,
+      display_name: displayName,
+      list_name: displayName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
       owner_id: userId,
       created_by_id: userId,
       created_by: 'system',
@@ -341,10 +342,11 @@ export function createDefaultListsForUser(userId) {
   });
   
   // Add accommodation lists
-  Object.entries(DEFAULT_ACCOMMODATION_LISTS).forEach(([listName, listData]) => {
+  Object.entries(DEFAULT_ACCOMMODATION_LISTS).forEach(([displayName, listData]) => {
     lists.push({
       ...listData,
-      list_name: listName,
+      display_name: displayName,
+      list_name: displayName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
       owner_id: userId,
       created_by_id: userId,
       created_by: 'system',
@@ -353,10 +355,11 @@ export function createDefaultListsForUser(userId) {
   });
   
   // Add companion lists
-  Object.entries(DEFAULT_COMPANION_LISTS).forEach(([listName, listData]) => {
+  Object.entries(DEFAULT_COMPANION_LISTS).forEach(([displayName, listData]) => {
     lists.push({
       ...listData,
-      list_name: listName,
+      display_name: displayName,
+      list_name: displayName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
       owner_id: userId,
       created_by_id: userId,
       created_by: 'system',
