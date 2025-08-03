@@ -21,7 +21,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       {/* Main content */}
-      <main className={`flex-1 overflow-auto ${isNewPage ? 'pb-6' : 'pb-20'}`}>{children}</main>
+      <main className={`flex-1 overflow-auto mobile-scroll-optimized ${isNewPage ? 'pb-6' : 'pb-20'}`}>{children}</main>
 
       {/* Bottom Navigation Bar - Hidden on New page */}
       {!isNewPage && (

@@ -147,6 +147,44 @@ button:focus-visible {
   * {
     @apply border-border outline-ring/50;
   }
+  
+  /* Mobile scrolling optimizations */
+  html, body {
+    /* Enable smooth scrolling with momentum on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent overscroll bounce from interfering with nested scroll containers */
+    overscroll-behavior: auto;
+    /* Allow native touch actions for better scroll performance */
+    touch-action: manipulation;
+  }
+  
+  /* Ensure main scroll containers work properly on mobile */
+  main[class*="overflow-auto"], 
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto {
+    /* Enable momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent scroll issues on mobile */
+    overscroll-behavior: contain;
+  }
+  
+  /* Fix for nested scroll containers */
+  .scroll-area-viewport {
+    /* Ensure Radix UI scroll areas work properly */
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Mobile scroll optimization utility */
+  .mobile-scroll-optimized {
+    /* Optimize for mobile touch scrolling */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent scroll chaining issues */
+    overscroll-behavior-y: contain;
+    /* Improve scroll performance on mobile */
+    will-change: scroll-position;
+  }
+  
   body {
     @apply bg-background text-foreground;
   }

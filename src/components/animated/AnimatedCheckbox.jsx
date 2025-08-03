@@ -29,17 +29,44 @@ const AnimatedCheckbox = ({ checked, onChange, className, disabled = false }) =>
   };
 
   // Improved mobile touch handling
-  const handleTouchStart = e => {
+  const handleTouchStart = () => {
     if (disabled) return;
-    e.preventDefault(); // Prevent double-firing with onClick
+    // Don't prevent default - let natural scrolling work
     setIsPressed(true);
   };
 
   const handleTouchEnd = e => {
     if (disabled) return;
-    e.preventDefault();
+    // Only prevent default and handle toggle if this was a tap, not a scroll
+    // Check if the touch moved significantly (indicating a scroll gesture)
+    const touch = e.changedTouches[0];
+    const startTouch = e.target._startTouch;
+    
+    if (startTouch) {
+      const deltaX = Math.abs(touch.clientX - startTouch.clientX);
+      const deltaY = Math.abs(touch.clientY - startTouch.clientY);
+      const threshold = 10; // 10px threshold for scroll vs tap
+      
+      if (deltaX < threshold && deltaY < threshold) {
+        // This was a tap, not a scroll
+        e.preventDefault();
+        handleToggle();
+      }
+    }
+    
     setIsPressed(false);
-    handleToggle();
+    delete e.target._startTouch;
+  };
+
+  // Store touch start position for comparison
+  const handleTouchStartWithPosition = e => {
+    if (disabled) return;
+    const touch = e.touches[0];
+    e.target._startTouch = {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    };
+    handleTouchStart();
   };
 
   const handleMouseDown = () => {
@@ -82,7 +109,7 @@ const AnimatedCheckbox = ({ checked, onChange, className, disabled = false }) =>
         className,
       )}
       onClick={handleToggle}
-      onTouchStart={handleTouchStart}
+      onTouchStart={handleTouchStartWithPosition}
       onTouchEnd={handleTouchEnd}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
