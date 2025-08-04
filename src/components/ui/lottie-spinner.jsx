@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 const LottieSpinner = ({ size = 100, className, color = '#3b82f6' }) => {
   const containerRef = useRef(null);
@@ -9,17 +9,26 @@ const LottieSpinner = ({ size = 100, className, color = '#3b82f6' }) => {
     // Import lottie dynamically
     const loadLottie = async () => {
       try {
-        // Use a CDN version of lottie-web
-        const lottieScript = document.createElement('script');
-        lottieScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.0/lottie.min.js';
-        lottieScript.async = true;
+        // Check if lottie is already loaded to avoid adding multiple script tags
+        if (!window.lottie) {
+          // Use a CDN version of lottie-web
+          const lottieScript = document.createElement('script');
+          lottieScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.0/lottie.min.js';
+          lottieScript.async = true;
 
-        // Wait for the script to load
-        await new Promise((resolve, reject) => {
-          lottieScript.onload = resolve;
-          lottieScript.onerror = reject;
-          document.head.appendChild(lottieScript);
-        });
+          // Wait for the script to load
+          await new Promise((resolve, reject) => {
+            lottieScript.onload = resolve;
+            lottieScript.onerror = reject;
+            
+            // Check if script already exists to avoid duplicates
+            if (!document.querySelector('script[src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.0/lottie.min.js"]')) {
+              document.head.appendChild(lottieScript);
+            } else {
+              resolve(); // Script already exists
+            }
+          });
+        }
 
         // The simplified spinner animation
         const spinnerAnimation = {
@@ -6404,15 +6413,21 @@ const LottieSpinner = ({ size = 100, className, color = '#3b82f6' }) => {
         };
 
         // Initialize the animation
-        window.lottie.loadAnimation({
+        const animationInstance = window.lottie.loadAnimation({
           container: containerRef.current,
           renderer: 'svg',
           loop: true,
           autoplay: true,
           animationData: spinnerAnimation,
         });
+
+        // Store the instance for cleanup
+        containerRef.current._lottieInstance = animationInstance;
+        
+        console.log('Lottie walking man animation loaded successfully');
       } catch (err) {
-        console.error('Failed to load Lottie animation:', err);
+        console.error('Failed to load Lottie walking man animation:', err);
+        console.error('Error details:', err.message);
 
         // Fallback to a simple CSS spinner if Lottie fails
         if (containerRef.current) {
@@ -6423,6 +6438,8 @@ const LottieSpinner = ({ size = 100, className, color = '#3b82f6' }) => {
           fallbackSpinner.style.height = `${size * 0.6}px`;
           fallbackSpinner.style.borderColor = color;
           containerRef.current.appendChild(fallbackSpinner);
+          
+          console.log('Using fallback CSS spinner instead of walking man animation');
         }
       }
     };
@@ -6430,9 +6447,10 @@ const LottieSpinner = ({ size = 100, className, color = '#3b82f6' }) => {
     loadLottie();
 
     return () => {
-      // Cleanup
-      if (window.lottie) {
-        window.lottie.destroy();
+      // Cleanup only this specific animation instance
+      if (containerRef.current?._lottieInstance) {
+        containerRef.current._lottieInstance.destroy();
+        containerRef.current._lottieInstance = null;
       }
     };
   }, [size, color]);

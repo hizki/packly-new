@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import CustomListForm from '@/components/lists/CustomListForm';
 import { toast } from '@/components/ui/use-toast';
+import LottieSpinner from '@/components/ui/lottie-spinner';
 
 export default function ListManagerPage() {
   const navigate = useNavigate();
@@ -152,10 +153,10 @@ export default function ListManagerPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-6">
-        <div className="text-center">
-          <div className="w-8 h-8 animate-spin mx-auto mb-4 border-2 border-blue-600 border-t-transparent rounded-full" />
-          <p>Loading your lists...</p>
-        </div>
+        <LottieSpinner
+          size={120}
+          color="#3b82f6"
+        />
       </div>
     );
   }
