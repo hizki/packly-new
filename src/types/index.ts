@@ -7,8 +7,10 @@ export interface User {
   id: string;
   email: string;
   full_name?: string;
-  has_initialized_base_lists?: boolean;
-  settings?: UserSettings;
+  settings?: Record<string, any>;
+  created_date?: string;
+  updated_date?: string;
+  has_initialized_lists?: boolean;
 }
 
 /** User settings interface */
@@ -121,7 +123,6 @@ export interface PackingList {
 export interface Tip {
   id: string;
   content: string;
-  is_default: boolean;
   order: number;
 }
 

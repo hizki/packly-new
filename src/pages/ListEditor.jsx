@@ -158,7 +158,6 @@ export default function ListEditorPage() {
           name: listDisplayName,
           items: updatedItems,
           owner_id: list.owner_id,
-          is_default: false,
         });
         setList(newList);
       }

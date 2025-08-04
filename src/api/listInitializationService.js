@@ -1,6 +1,6 @@
 import { TipList, User, List, ListType } from './entities';
 import {
-  createDefaultListsForUser,
+  createInitialListsForUser,
   createDefaultTipListsForUser,
   createDefaultListTypesForUser,
 } from '../utils/defaultListData';
@@ -19,11 +19,11 @@ export class ListInitializationService {
       // First, ensure default list types exist
       await this.ensureDefaultListTypes(userId);
       
-      // Create default lists using the List service (custom lists table)
-      const defaultBaseLists = createDefaultListsForUser(userId);
-      for (const listData of defaultBaseLists) {
-        // Convert to custom list format for the lists table
-        const customListData = {
+      // Create initial lists for the user
+      const initialLists = createInitialListsForUser(userId);
+      for (const listData of initialLists) {
+        // Create in the lists table
+        const listToCreate = {
           list_type: listData.list_type,
           list_name: listData.list_name,
           name: listData.display_name,
@@ -32,10 +32,8 @@ export class ListInitializationService {
           owner_id: listData.owner_id,
           created_by_id: listData.created_by_id,
           created_by: listData.created_by,
-          is_sample: listData.is_sample,
-          is_default: true,
         };
-        await List.create(customListData);
+        await List.create(listToCreate);
       }
       
       // Create default tip lists
@@ -45,7 +43,7 @@ export class ListInitializationService {
       }
       
       // Mark user as initialized
-      await User.updateMyUserData({ has_initialized_base_lists: true });
+      await User.updateMyUserData({ has_initialized_lists: true });
       
       console.log('✅ Successfully initialized default lists for user');
       return true;
@@ -109,11 +107,11 @@ export class ListInitializationService {
       // Ensure default list types exist
       await this.ensureDefaultListTypes(userId);
       
-      // Recreate default lists using the List service (custom lists table)
-      const defaultBaseLists = createDefaultListsForUser(userId);
-      for (const listData of defaultBaseLists) {
-        // Convert to custom list format for the lists table
-        const customListData = {
+      // Recreate initial lists
+      const initialLists = createInitialListsForUser(userId);
+      for (const listData of initialLists) {
+        // Create in the lists table
+        const listToCreate = {
           list_type: listData.list_type,
           list_name: listData.list_name,
           name: listData.display_name,
@@ -122,10 +120,8 @@ export class ListInitializationService {
           owner_id: listData.owner_id,
           created_by_id: listData.created_by_id,
           created_by: listData.created_by,
-          is_sample: listData.is_sample,
-          is_default: true,
         };
-        await List.create(customListData);
+        await List.create(listToCreate);
       }
       
       const defaultTipLists = createDefaultTipListsForUser(userId);
@@ -149,13 +145,14 @@ export class ListInitializationService {
       const customLists = await List.filter({ owner_id: userId });
       const tipLists = await TipList.filter({ owner_id: userId });
       
-      // Check if any lists are not marked as samples (meaning they're custom)
-      const hasCustomLists = customLists.some(list => !list.is_sample);
-      const hasCustomTipLists = tipLists.some(list => !list.is_sample);
+      // If user has any lists, they have custom modifications
+      // (since we create initial lists on signup, any changes = modifications)
+      const hasCustomLists = customLists.length > 0;
+      const hasCustomTipLists = tipLists.length > 0;
       
       return hasCustomLists || hasCustomTipLists;
     } catch (error) {
-      console.error('Error checking for custom modifications:', error);
+      console.error('Error checking custom modifications:', error);
       return false;
     }
   }
@@ -181,7 +178,7 @@ export class ListInitializationService {
       }, 0);
       
       return {
-        totalBaseLists: customLists.length,
+        totalLists: customLists.length,
         activityLists: activityLists.length,
         accommodationLists: accommodationLists.length,
         companionLists: companionLists.length,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { PackingList, BaseList, User, List } from '@/api/entities';
+import { PackingList, User, List } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -951,35 +951,26 @@ export default function NewListPage() {
             try {
               console.log(`🔎 Looking for list with list_name: "${listName}"`);
               
-              // First try to find in user's custom lists (lists table)
-              const customLists = await List.filter({
+              // Find user's list with matching list_name
+              const userLists = await List.filter({
                 owner_id: user.id,
-                list_type: 'activity', // Also filter by type to be more specific
+                list_type: 'activity', // Filter by type to be more specific
               });
               
-              console.log('📋 All user activity lists:', customLists.map(l => ({ 
+              console.log('📋 All user activity lists:', userLists.map(l => ({ 
                 name: l.name, 
                 list_name: l.list_name, 
                 itemCount: l.items?.length || 0 
               })));
               
               // Find matching list by list_name
-              const matchingList = customLists.find(l => l.list_name === listName);
+              const matchingList = userLists.find(l => l.list_name === listName);
               
               if (matchingList) {
                 console.log(`✅ Found matching list: "${matchingList.name}" with ${matchingList.items?.length || 0} items`);
                 allItemsFromLists.push(...(matchingList.items || []));
               } else {
-                console.log(`❌ No custom list found for "${listName}", trying fallback...`);
-                // Fallback to default/sample lists (base_lists table)
-                const sampleLists = await BaseList.filter({
-                  list_name: listName,
-                  is_sample: true,
-                });
-                if (sampleLists.length > 0) {
-                  console.log(`📦 Using fallback list with ${sampleLists[0].items?.length || 0} items`);
-                  allItemsFromLists.push(...sampleLists[0].items);
-                }
+                console.log(`❌ No list found for "${listName}"`);
               }
             } catch (error) {
               console.warn(`Could not fetch items for list: ${listName}`, error);

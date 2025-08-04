@@ -12,46 +12,18 @@ const isDev =
 const mockPackingLists = [
   {
     id: '1',
-    name: 'Weekend Trip to Paris',
-    owner_id: 'dev-user-123',
-    trip_type: 'leisure',
-    destination: 'Paris, France',
-    start_date: '2024-02-15',
-    end_date: '2024-02-17',
-    is_favorite: true,
-    created_date: '2024-01-15T10:00:00Z',
-    updated_date: '2024-01-20T15:30:00Z',
-  },
-  {
-    id: '2',
-    name: 'Business Trip to Tokyo',
-    owner_id: 'dev-user-123',
-    trip_type: 'business',
-    destination: 'Tokyo, Japan',
-    start_date: '2024-03-01',
-    end_date: '2024-03-05',
-    is_favorite: false,
-    created_date: '2024-01-10T09:00:00Z',
-    updated_date: '2024-01-10T09:00:00Z',
-  },
-];
-
-const mockBaseLists = [
-  {
-    id: '1',
     name: 'Beach Vacation',
-    list_type: 'activity',
-    category_id: 'beach',
+    destinations: [{ name: 'Hawaii', startDate: '2024-01-15', endDate: '2024-01-22' }],
+    activities: ['beach', 'swimming'],
+    accommodation: 'hotel',
+    companions: ['partner'],
+    amenities: ['pool'],
+    items: [
+      { name: 'Sunscreen', category: 'toiletries', packed: false },
+      { name: 'Swimsuit', category: 'clothing', packed: true },
+      { name: 'Beach towel', category: 'gear', packed: false },
+    ],
     owner_id: 'dev-user-123',
-    items: ['Sunscreen', 'Beach towel', 'Swimsuit', 'Sunglasses'],
-  },
-  {
-    id: '2',
-    name: 'Business Hotel',
-    list_type: 'accommodation',
-    category_id: 'hotel',
-    owner_id: 'dev-user-123',
-    items: ['Business attire', 'Laptop charger', 'Business cards', 'Iron'],
   },
 ];
 
@@ -92,7 +64,6 @@ const mockCustomLists = [
         weather_type: 'any',
       },
     ],
-    is_default: false,
   },
 ];
 
@@ -181,92 +152,6 @@ export class PackingListService {
     }
 
     const { error } = await supabase.from('packing_lists').delete().eq('id', id);
-
-    if (error) throw error;
-    return true;
-  }
-
-  // Compatibility aliases
-  static async filter(filters) {
-    return this.findMany(filters);
-  }
-}
-
-export class BaseListService {
-  static async findMany(filters = {}) {
-    if (isDev) {
-      console.log('🚀 Development mode: Mock base lists');
-      return mockBaseLists.filter(list => !filters.owner_id || list.owner_id === filters.owner_id);
-    }
-
-    let query = supabase.from('base_lists').select('*');
-
-    if (filters.owner_id) {
-      query = query.eq('owner_id', filters.owner_id);
-    }
-    if (filters.list_type) {
-      query = query.eq('list_type', filters.list_type);
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-    return data;
-  }
-
-  static async create(data) {
-    if (isDev) {
-      console.log('🚀 Development mode: Mock create base list', data);
-      const newList = {
-        ...data,
-        id: Date.now().toString(),
-      };
-      mockBaseLists.push(newList);
-      return newList;
-    }
-
-    const { data: result, error } = await supabase
-      .from('base_lists')
-      .insert([data])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return result;
-  }
-
-  static async update(id, data) {
-    if (isDev) {
-      console.log('🚀 Development mode: Mock update base list', id, data);
-      const index = mockBaseLists.findIndex(list => list.id === id);
-      if (index !== -1) {
-        mockBaseLists[index] = { ...mockBaseLists[index], ...data };
-        return mockBaseLists[index];
-      }
-      throw new Error('Base list not found');
-    }
-
-    const { data: result, error } = await supabase
-      .from('base_lists')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return result;
-  }
-
-  static async delete(id) {
-    if (isDev) {
-      console.log('🚀 Development mode: Mock delete base list', id);
-      const index = mockBaseLists.findIndex(list => list.id === id);
-      if (index !== -1) {
-        mockBaseLists.splice(index, 1);
-      }
-      return true;
-    }
-
-    const { error } = await supabase.from('base_lists').delete().eq('id', id);
 
     if (error) throw error;
     return true;
@@ -640,7 +525,6 @@ export class ListTypeService {
 
 // Export aliases for compatibility with existing code
 export const PackingList = PackingListService;
-export const BaseList = BaseListService;
 export const TipList = TipListService;
 export const CustomList = CustomListService;
 export const List = CustomListService; // For custom lists (lists table)

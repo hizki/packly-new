@@ -323,9 +323,9 @@ export function getAllDefaultLists() {
 }
 
 /**
- * Create default list data for database insertion
+ * Create initial list data for database insertion
  */
-export function createDefaultListsForUser(userId) {
+export function createInitialListsForUser(userId) {
   const lists = [];
   
   // Add activity lists
@@ -337,7 +337,6 @@ export function createDefaultListsForUser(userId) {
       owner_id: userId,
       created_by_id: userId,
       created_by: 'system',
-      is_sample: true,
     });
   });
   
@@ -350,7 +349,6 @@ export function createDefaultListsForUser(userId) {
       owner_id: userId,
       created_by_id: userId,
       created_by: 'system',
-      is_sample: true,
     });
   });
   
@@ -363,7 +361,6 @@ export function createDefaultListsForUser(userId) {
       owner_id: userId,
       created_by_id: userId,
       created_by: 'system',
-      is_sample: true,
     });
   });
   
@@ -379,11 +376,9 @@ export function createDefaultTipListsForUser(userId) {
     owner_id: userId,
     created_by_id: userId,
     created_by: 'system',
-    is_sample: true,
     tips: tips.map((content, index) => ({
       id: `${listType}_${index}`,
       content,
-      is_default: true,
       order: index,
     })),
   }));
@@ -403,7 +398,6 @@ export function createDefaultListTypesForUser(userId) {
       display_name: displayName,
       icon: listData.icon,
       description: `Items needed for ${displayName.toLowerCase()}`,
-      is_default: true,
       created_by_id: userId,
     });
   });
@@ -415,8 +409,7 @@ export function createDefaultListTypesForUser(userId) {
       list_name: displayName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
       display_name: displayName,
       icon: listData.icon,
-      description: `Items for staying at ${displayName.toLowerCase()}`,
-      is_default: true,
+      description: `Items needed for ${displayName.toLowerCase()}`,
       created_by_id: userId,
     });
   });
@@ -428,8 +421,7 @@ export function createDefaultListTypesForUser(userId) {
       list_name: displayName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
       display_name: displayName,
       icon: listData.icon,
-      description: `Items for traveling ${displayName.toLowerCase()}`,
-      is_default: true,
+      description: `Items needed when traveling with ${displayName.toLowerCase()}`,
       created_by_id: userId,
     });
   });

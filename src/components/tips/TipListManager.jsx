@@ -112,7 +112,7 @@ export default function TipListManager() {
         const newTipItem = {
           id: `${listType}_${Date.now()}`,
           content: tipContent,
-          is_default: false,
+  
           order: newTips.length,
         };
         newTips.push(newTipItem);
@@ -203,15 +203,13 @@ export default function TipListManager() {
                       <GripVertical className="h-4 w-4 text-gray-400" />
                     </div>
                     <span className="flex-1">{tip.content}</span>
-                    {!tip.is_default && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteTip(listType, tip.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteTip(listType, tip.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
                   </div>
                 )}
               </Draggable>

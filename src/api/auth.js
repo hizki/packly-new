@@ -13,7 +13,7 @@ const mockUser = {
   id: 'dev-user-123',
   email: 'dev@example.com',
   full_name: 'Developer User',
-  has_initialized_base_lists: true,
+      has_initialized_lists: true,
   settings: {
     notifications: true,
     theme: 'light',
@@ -62,7 +62,7 @@ export class AuthService {
             id: user.id,
             email: user.email,
             full_name: user.user_metadata?.full_name || user.email,
-            has_initialized_base_lists: false,
+            has_initialized_lists: false,
             settings: {},
           })
           .select()

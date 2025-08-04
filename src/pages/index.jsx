@@ -10,8 +10,6 @@ import New from './New';
 
 import ListDetail from './ListDetail';
 
-import BaseListManager from './BaseListManager';
-
 import Trips from './Trips';
 
 import ListManager from './ListManager';
@@ -30,8 +28,6 @@ const PAGES = {
   New: New,
 
   ListDetail: ListDetail,
-
-  BaseListManager: BaseListManager,
 
   Trips: Trips,
 
@@ -91,11 +87,6 @@ function PagesContent() {
         <Route
           path="/ListDetail"
           element={<ListDetail />}
-        />
-
-        <Route
-          path="/BaseListManager"
-          element={<BaseListManager />}
         />
 
         <Route

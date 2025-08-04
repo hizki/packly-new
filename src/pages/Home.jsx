@@ -31,7 +31,7 @@ export default function HomePage() {
       const currentUser = await withRetry(() => User.getCurrentUser());
       setUser(currentUser);
 
-      if (currentUser && !currentUser.has_initialized_base_lists) {
+      if (currentUser && !currentUser.has_initialized_lists) {
         await initializeUser(currentUser.id);
       }
 

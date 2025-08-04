@@ -12,9 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { User } from '@/api/entities';
-import { PackingList } from '@/api/entities';
-import { BaseList } from '@/api/entities';
-import { TipList } from '@/api/entities';
+import { PackingList, TipList, List } from '@/api/entities';
 import { toast } from '@/components/ui/use-toast';
 
 export default function DeleteAccountDialog({ open, onOpenChange }) {
@@ -23,19 +21,22 @@ export default function DeleteAccountDialog({ open, onOpenChange }) {
 
   const deleteAllUserData = async userId => {
     try {
-      // Delete all packing lists
+      // Delete user's data
+      console.log('🗑️ Deleting user data...');
+      
+      // Delete packing lists
       const packingLists = await PackingList.filter({ owner_id: userId });
       for (const list of packingLists) {
         await PackingList.delete(list.id);
       }
-
-      // Delete all base lists
-      const baseLists = await BaseList.filter({ owner_id: userId });
-      for (const list of baseLists) {
-        await BaseList.delete(list.id);
+      
+      // Delete custom lists (includes what were previously called "base lists")
+      const customLists = await List.filter({ owner_id: userId });
+      for (const list of customLists) {
+        await List.delete(list.id);
       }
-
-      // Delete all tip lists
+      
+      // Delete tip lists
       const tipLists = await TipList.filter({ owner_id: userId });
       for (const list of tipLists) {
         await TipList.delete(list.id);
@@ -43,7 +44,7 @@ export default function DeleteAccountDialog({ open, onOpenChange }) {
 
       // Delete user data stored in User entity
       await User.updateMyUserData({
-        has_initialized_base_lists: false,
+        has_initialized_lists: false,
         // Add any other user-specific data fields that need to be reset
       });
     } catch (error) {
