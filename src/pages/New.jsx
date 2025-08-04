@@ -76,7 +76,7 @@ export default function NewListPage() {
       },
     ],
     activities: [],
-    accommodation: 'hotel',
+    accommodation: [],
     companions: [],
     amenities: [],
     items: [],
@@ -201,7 +201,7 @@ export default function NewListPage() {
       if (accommodationLists.length > 0) {
         setFormData(prev => ({
           ...prev,
-          accommodation: accommodationLists[0].list_name,
+          accommodation: [accommodationLists[0].list_name],
         }));
       }
 
@@ -714,6 +714,22 @@ export default function NewListPage() {
         return {
           ...prev,
           companions: [...prev.companions, companionId],
+        };
+      }
+    });
+  };
+
+  const handleAccommodationToggle = accommodationId => {
+    setFormData(prev => {
+      if (prev.accommodation.includes(accommodationId)) {
+        return {
+          ...prev,
+          accommodation: prev.accommodation.filter(id => id !== accommodationId),
+        };
+      } else {
+        return {
+          ...prev,
+          accommodation: [...prev.accommodation, accommodationId],
         };
       }
     });
@@ -1703,16 +1719,19 @@ export default function NewListPage() {
                       className={`
                         p-3 rounded-lg border cursor-pointer transition-all
                         ${
-                          formData.accommodation === option.id
+                          formData.accommodation.includes(option.id)
                             ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500 ring-opacity-50'
                             : 'hover:bg-gray-50'
                         }
                       `}
-                      onClick={() => setFormData({ ...formData, accommodation: option.id })}
+                      onClick={() => handleAccommodationToggle(option.id)}
                     >
                       <div className="flex flex-col items-center gap-2 text-center">
                         <span className="text-2xl">{option.icon}</span>
                         <span className="text-sm font-medium">{option.label}</span>
+                        {formData.accommodation.includes(option.id) && (
+                          <Check className="w-4 h-4 text-blue-600" />
+                        )}
                       </div>
                     </div>
                   ))}
