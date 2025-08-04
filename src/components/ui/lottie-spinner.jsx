@@ -6423,8 +6423,6 @@ const LottieSpinner = ({ size = 100, className, color = '#3b82f6' }) => {
 
         // Store the instance for cleanup
         containerRef.current._lottieInstance = animationInstance;
-        
-        console.log('Lottie walking man animation loaded successfully');
       } catch (err) {
         console.error('Failed to load Lottie walking man animation:', err);
         console.error('Error details:', err.message);
