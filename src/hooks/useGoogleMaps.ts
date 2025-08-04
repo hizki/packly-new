@@ -184,7 +184,7 @@ export function useGoogleMaps({
         });
 
         mapInstance.current = map;
-        getUserLocation(map);
+        // getUserLocation(map); // Removed automatic location request
       }
 
       const map = mapInstance.current;

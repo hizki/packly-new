@@ -433,11 +433,11 @@ export default function NewListPage() {
 
         mapInstance.current = map;
 
-        try {
-          getUserLocation(map);
-        } catch (error) {
-          console.error('Error getting user location:', error);
-        }
+        // try {
+        //   getUserLocation(map); // Removed automatic location request
+        // } catch (error) {
+        //   console.error('Error getting user location:', error);
+        // }
       }
 
       const map = mapInstance.current;
