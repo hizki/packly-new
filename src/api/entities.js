@@ -344,7 +344,7 @@ export class ListTypeService {
       console.log('🚧 Dev mode: Using mock list types');
       // Return mock list types based on the actual structure
       return [
-        { id: '1', name: 'Beach Trip', parent_type: 'activity', icon: '🏖️', display_name: 'Beach Trip' },
+        { id: '1', name: 'Beach', parent_type: 'activity', icon: '🏖️', display_name: 'Beach Trip' },
         { id: '2', name: 'Camping', parent_type: 'activity', icon: '🏕️', display_name: 'Camping' },
         { id: '3', name: 'Hotel', parent_type: 'accommodation', icon: '🏨', display_name: 'Hotel' },
         { id: '4', name: 'Solo Travel', parent_type: 'companion', icon: '🧍', display_name: 'Solo Travel' },

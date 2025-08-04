@@ -2,7 +2,7 @@
  * Default activity packing lists
  */
 export const DEFAULT_ACTIVITY_LISTS = {
-  'Beach Trip': {
+  'Beach': {
     list_type: 'activity',
     icon: '🏖️',
     items: [
