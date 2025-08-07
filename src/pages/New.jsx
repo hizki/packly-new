@@ -826,7 +826,7 @@ export default function NewListPage() {
       }
     }
 
-    if (formData.accommodation === 'camping') {
+    if (Array.isArray(formData.accommodation) && formData.accommodation.includes('camping')) {
       timeframe += ' of camping';
     }
 
@@ -853,7 +853,7 @@ export default function NewListPage() {
       errors.activities = 'Select at least one activity';
     }
 
-    if (!formData.accommodation) {
+    if (!Array.isArray(formData.accommodation) || formData.accommodation.length === 0) {
       errors.accommodation = "Select where you're staying";
     }
 
@@ -924,7 +924,7 @@ export default function NewListPage() {
           if (!selectedActivities || selectedActivities.length === 0) {
             warnings.push('No activities selected - basic items only');
           }
-          if (!selectedAccommodation) {
+          if (!selectedAccommodation || selectedAccommodation.length === 0) {
             warnings.push('Accommodation type not specified - using hotel defaults');
           }
 
@@ -953,45 +953,47 @@ export default function NewListPage() {
           // Fetch items from selected lists
           const allSelectedListNames = [
             ...selectedActivities,
-            selectedAccommodation,
+            ...((selectedAccommodation || [])),
             ...selectedCompanions,
           ].filter(Boolean);
 
           const user = await User.me();
           const allItemsFromLists = [];
 
-          // Fetch items from each selected list
-          console.log('🔍 Selected list names:', allSelectedListNames);
-          
+          // Fetch user's lists across all supported types once
+          const [activityLists, accommodationLists, companionLists] = await Promise.all([
+            List.filter({ owner_id: user.id, list_type: 'activity' }),
+            List.filter({ owner_id: user.id, list_type: 'accommodation' }),
+            List.filter({ owner_id: user.id, list_type: 'companion' }),
+          ]);
+          const allUserLists = [
+            ...(activityLists || []),
+            ...(accommodationLists || []),
+            ...(companionLists || []),
+          ];
+
+          console.log('📋 User lists (all types):', allUserLists.map(l => ({ name: l.name, list_name: l.list_name, type: l.list_type, itemCount: l.items?.length || 0 })));
+
+          // Collect items from selected lists
           for (const listName of allSelectedListNames) {
-            try {
-              console.log(`🔎 Looking for list with list_name: "${listName}"`);
-              
-              // Find user's list with matching list_name
-              const userLists = await List.filter({
-                owner_id: user.id,
-                list_type: 'activity', // Filter by type to be more specific
-              });
-              
-              console.log('📋 All user activity lists:', userLists.map(l => ({ 
-                name: l.name, 
-                list_name: l.list_name, 
-                itemCount: l.items?.length || 0 
-              })));
-              
-              // Find matching list by list_name
-              const matchingList = userLists.find(l => l.list_name === listName);
-              
-              if (matchingList) {
-                console.log(`✅ Found matching list: "${matchingList.name}" with ${matchingList.items?.length || 0} items`);
-                allItemsFromLists.push(...(matchingList.items || []));
-              } else {
-                console.log(`❌ No list found for "${listName}"`);
-              }
-            } catch (error) {
-              console.warn(`Could not fetch items for list: ${listName}`, error);
+            const matchingList = allUserLists.find(l => l.list_name === listName);
+            if (matchingList) {
+              allItemsFromLists.push(...(matchingList.items || []));
             }
           }
+
+          // Normalize items from lists to ensure required fields
+          const normalizedItemsFromLists = (allItemsFromLists || []).map(item => ({
+            name: item?.name ?? '',
+            category: item?.category ?? 'additional',
+            quantity:
+              typeof item?.quantity === 'number' && Number.isFinite(item.quantity) && item.quantity > 0
+                ? item.quantity
+                : 1,
+            is_packed: !!item?.is_packed,
+            weather_dependent: !!item?.weather_dependent,
+            emoji: item?.emoji,
+          })).filter(i => i.name);
 
           // Essential items that adjust with trip length (these are universal)
           const essentialItems = [
@@ -1120,7 +1122,7 @@ export default function NewListPage() {
 
           // Combine all items from database lists with essential and weather items
           const combinedItems = [
-            ...allItemsFromLists,
+            ...normalizedItemsFromLists,
             ...essentialItems,
             ...weatherItems,
             ...rainItems,
@@ -1475,7 +1477,7 @@ export default function NewListPage() {
               <CardTitle>Where are you going?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {formData.destinations.map((destination, index) => (
+                {formData.destinations.map((destination, index) => (
                 <div
                   key={index}
                   className="p-4 border rounded-lg relative"
@@ -1899,12 +1901,19 @@ export default function NewListPage() {
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-2 mt-4">
-                    <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-full text-xs">
-                      <span className="font-medium">Staying at:</span>
-                      <span>
-                        {accommodationOptions.find(a => a.id === formData.accommodation)?.label}
-                      </span>
-                    </div>
+                    {Array.isArray(formData.accommodation) && formData.accommodation.length > 0 && (
+                      <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-full text-xs">
+                        <span className="font-medium">Staying at:</span>
+                        <span className="flex gap-1 flex-wrap">
+                          {formData.accommodation.map(acc => {
+                            const label = accommodationOptions.find(a => a.id === acc)?.label || acc;
+                            return (
+                              <span key={acc} className="capitalize">{label}</span>
+                            );
+                          })}
+                        </span>
+                      </div>
+                    )}
                     {formData.activities.map(activity => (
                       <span
                         key={activity}

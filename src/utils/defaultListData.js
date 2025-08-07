@@ -128,7 +128,6 @@ export const DEFAULT_ACCOMMODATION_LISTS = {
     list_type: 'accommodation',
     icon: '🏨',
     items: [
-      { name: 'Toiletries (hotel may provide basic ones)', category: 'toiletries', quantity: 1, weather_dependent: false },
       { name: 'Hair dryer (if not provided)', category: 'tech', quantity: 1, weather_dependent: false },
       { name: 'Slippers', category: 'clothing', quantity: 1, weather_dependent: false },
       { name: 'Robe', category: 'clothing', quantity: 1, weather_dependent: false },

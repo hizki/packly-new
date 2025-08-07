@@ -780,13 +780,16 @@ export default function ListDetailPage() {
                 )}
 
                 <div className="flex flex-wrap gap-2 pt-4 border-t">
-                  {list.accommodation && (
-                    <Badge
-                      variant="outline"
-                      className="bg-gray-50"
-                    >
-                      {list.accommodation.replace(/_/g, ' ')}
-                    </Badge>
+                  {Array.isArray(list.accommodation) && list.accommodation.length > 0 && (
+                    list.accommodation.map(acc => (
+                      <Badge
+                        key={acc}
+                        variant="outline"
+                        className="bg-gray-50"
+                      >
+                        {String(acc).replace(/_/g, ' ')}
+                      </Badge>
+                    ))
                   )}
 
                   {list.activities &&

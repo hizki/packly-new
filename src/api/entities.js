@@ -13,29 +13,42 @@ const mockPackingLists = [
   {
     id: '1',
     name: 'Beach Vacation',
-    destinations: [{ name: 'Hawaii', startDate: '2024-01-15', endDate: '2024-01-22' }],
+    destinations: [
+      { location: 'Hawaii', start_date: '2024-01-15', end_date: '2024-01-22' },
+    ],
     activities: ['beach', 'swimming'],
-    accommodation: 'hotel',
+    accommodation: ['hotel'],
     companions: ['partner'],
     amenities: ['pool'],
     items: [
-      { name: 'Sunscreen', category: 'toiletries', packed: false },
-      { name: 'Swimsuit', category: 'clothing', packed: true },
-      { name: 'Beach towel', category: 'gear', packed: false },
+      { name: 'Sunscreen', category: 'toiletries', quantity: 1, is_packed: false },
+      { name: 'Swimsuit', category: 'clothing', quantity: 1, is_packed: true },
+      { name: 'Beach towel', category: 'gear', quantity: 1, is_packed: false },
     ],
     owner_id: 'dev-user-123',
+    is_favorite: false,
   },
 ];
 
 const mockTipLists = [
   {
     id: '1',
-    name: 'Travel Security Tips',
+    name: 'Day Before Departure',
+    list_type: 'day_before',
     owner_id: 'dev-user-123',
     tips: [
-      { id: '1', text: 'Keep copies of important documents', completed: false },
-      { id: '2', text: 'Use hotel safes for valuables', completed: true },
-      { id: '3', text: 'Notify bank of travel plans', completed: false },
+      { id: '1', text: 'Check-in online and download boarding passes', completed: false },
+      { id: '2', text: 'Charge all devices and pack chargers', completed: false },
+    ],
+  },
+  {
+    id: '2',
+    name: 'Before Leaving Home',
+    list_type: 'before_leaving',
+    owner_id: 'dev-user-123',
+    tips: [
+      { id: '1', text: 'Lock doors/windows and set alarms', completed: false },
+      { id: '2', text: 'Turn off stove and unplug non-essential devices', completed: false },
     ],
   },
 ];
