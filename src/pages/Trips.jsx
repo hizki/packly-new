@@ -270,7 +270,7 @@ export default function TripsPage() {
                     : 'Start by creating your first trip'}
               </p>
               <Button
-                className="mt-4 bg-blue-600 hover:bg-blue-700"
+                className="mt-4"
                 onClick={() => navigate(createPageUrl('New'))}
               >
                 Create New Trip

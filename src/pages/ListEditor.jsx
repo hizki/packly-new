@@ -309,7 +309,7 @@ export default function ListEditorPage() {
     return (
       <div className="flex items-center justify-center h-full p-6">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
           <p>Loading list details...</p>
         </div>
       </div>

@@ -105,7 +105,7 @@ const AnimatedCheckbox = ({ checked, onChange, className, disabled = false }) =>
       className={cn(
         'relative w-5 h-5 border-2 rounded-md flex items-center justify-center select-none',
         disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-        isChecked ? 'border-blue-500 bg-blue-500' : 'border-gray-300 bg-white',
+    isChecked ? 'border-primary bg-primary' : 'border-input bg-background',
         className,
       )}
       onClick={handleToggle}

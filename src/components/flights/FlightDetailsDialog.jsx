@@ -112,7 +112,7 @@ const FlightDetailsDialog = ({ open, onOpenChange, destination, startDate, onFli
 
         {status === 'searching' && (
           <div className="py-8 flex flex-col items-center">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="mt-4 text-sm text-gray-500">Looking up flight details...</p>
           </div>
         )}
@@ -122,7 +122,7 @@ const FlightDetailsDialog = ({ open, onOpenChange, destination, startDate, onFli
             <div className="p-4 border rounded-lg bg-gray-50">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-semibold text-lg">{flightDetails.airline}</h3>
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                <span className="bg-primary/10 text-primary px-2 py-1 rounded text-sm">
                   {flightDetails.flight_number}
                 </span>
               </div>
@@ -136,7 +136,7 @@ const FlightDetailsDialog = ({ open, onOpenChange, destination, startDate, onFli
                 <div className="flex-1 mx-4 relative">
                   <div className="border-t border-gray-300"></div>
                   <Plane
-                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-blue-500 rotate-90"
+                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-primary rotate-90"
                     size={16}
                   />
                   <p className="text-xs text-gray-500 text-center mt-4">{flightDetails.duration}</p>

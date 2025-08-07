@@ -47,9 +47,9 @@ const AnimatedListItem = ({
 
       <div className="flex-1">
         <motion.span
-          className={`text-md ${item.is_packed ? 'line-through text-gray-500' : 'text-gray-900'}`}
+          className={`text-md ${item.is_packed ? 'line-through text-muted-foreground' : 'text-foreground'}`}
           animate={{
-            color: item.is_packed ? 'rgb(107, 114, 128)' : 'rgb(17, 24, 39)',
+            color: item.is_packed ? 'hsl(var(--muted-foreground))' : 'hsl(var(--foreground))',
           }}
           transition={{ duration: 0.2 }}
         >
@@ -103,7 +103,7 @@ const AnimatedListItem = ({
           )}
         </div>
       ) : (
-        <div className="text-sm font-medium text-gray-500 ml-2">
+        <div className="text-sm font-medium text-muted-foreground ml-2">
           {item.quantity > 1 && `×${item.quantity}`}
         </div>
       )}

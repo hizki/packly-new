@@ -686,7 +686,7 @@ export default function ListDetailPage() {
                 </h1>
               )}
               {list?.destinations?.[0] && (
-                <p className="text-gray-500">
+                <p className="text-muted-foreground">
                   {formatDateRange(getDateRange().start, getDateRange().end)}
                 </p>
               )}
@@ -770,7 +770,7 @@ export default function ListDetailPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleAddFlightDetails(index)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                           className="text-primary hover:text-primary hover:bg-primary/10"
                             >
                               <Plane className="w-4 h-4 mr-2" />
                               Add Flight Details
@@ -858,7 +858,7 @@ export default function ListDetailPage() {
         )}
 
         <div className="space-y-6">
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <div className="bg-card p-4 rounded-lg border shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-medium">Packing Progress</h3>
 
@@ -957,7 +957,7 @@ export default function ListDetailPage() {
                 }}
               ></div>
             </div>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               {list.items && list.items.filter(item => item.is_packed).length} of{' '}
               {list.items ? list.items.length : 0} items packed
             </p>

@@ -162,9 +162,9 @@ export default function ListManagerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-card border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -176,8 +176,8 @@ export default function ListManagerPage() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold">Your Lists</h1>
-                <p className="text-gray-500">Manage and customize your packing lists</p>
+                <h1 className="text-2xl font-bold text-foreground">Your Lists</h1>
+                <p className="text-muted-foreground">Manage and customize your packing lists</p>
               </div>
             </div>
           </div>
@@ -187,10 +187,10 @@ export default function ListManagerPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Main Tabs Interface */}
         <Tabs value={activeType} onValueChange={setActiveType} className="space-y-6">
-          <TabsList className="grid grid-cols-3 w-full bg-gray-50 p-1 rounded-lg h-auto">
+          <TabsList className="grid grid-cols-3 w-full p-1 rounded-lg h-auto">
             <TabsTrigger 
               value="activity" 
-              className="py-3 px-4 rounded-md font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 text-gray-600 hover:text-gray-900 flex items-center justify-center"
+              className="py-3 px-4 rounded-md font-medium transition-all flex items-center justify-center"
             >
               <Activity className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Activities</span>
@@ -198,7 +198,7 @@ export default function ListManagerPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="accommodation" 
-              className="py-3 px-4 rounded-md font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 text-gray-600 hover:text-gray-900 flex items-center justify-center"
+              className="py-3 px-4 rounded-md font-medium transition-all flex items-center justify-center"
             >
               <Home className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Accommodation</span>
@@ -206,7 +206,7 @@ export default function ListManagerPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="companion" 
-              className="py-3 px-4 rounded-md font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 text-gray-600 hover:text-gray-900 flex items-center justify-center"
+              className="py-3 px-4 rounded-md font-medium transition-all flex items-center justify-center"
             >
               <Users className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Companions</span>
@@ -268,7 +268,7 @@ export default function ListManagerPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {list.items?.length || 0} items
                       </p>
                                          </CardContent>
@@ -276,7 +276,7 @@ export default function ListManagerPage() {
                  ))}
 
                 {lists[type].length === 0 && (
-                  <div className="col-span-full text-center py-12 text-gray-500">
+                   <div className="col-span-full text-center py-12 text-muted-foreground">
                     <div className="text-4xl mb-2">📋</div>
                     <p>No {config.name.toLowerCase()} lists yet</p>
                     <p className="text-sm">Create your first custom list to get started</p>

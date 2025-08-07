@@ -147,9 +147,9 @@ export const EmojiGenerationDemo = () => {
           </div>
         </div>
 
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
-          <ul className="text-sm text-blue-800 space-y-1">
+        <div className="bg-secondary p-4 rounded-lg">
+          <h4 className="font-medium text-foreground mb-2">How it works:</h4>
+          <ul className="text-sm text-muted-foreground space-y-1">
             <li>• Sends item name + context to OpenAI GPT-3.5-turbo</li>
             <li>• Uses intelligent prompt for physical object preference</li>
             <li>• Falls back to mock logic if API fails</li>

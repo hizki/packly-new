@@ -26,11 +26,11 @@ const FlightDetailsCard = ({ flight, destinationDate, onEditFlight }) => {
 
   return (
     <Card className="mb-4 overflow-hidden border-blue-200">
-      <div className="bg-blue-500 h-1.5"></div>
+      <div className="bg-primary h-1.5"></div>
       <CardContent className="p-4">
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center">
-            <div className="bg-blue-100 p-2 rounded-full mr-3">
+            <div className="bg-primary/10 p-2 rounded-full mr-3">
               <Plane className="h-5 w-5 text-blue-600" />
             </div>
             <div>
@@ -43,7 +43,7 @@ const FlightDetailsCard = ({ flight, destinationDate, onEditFlight }) => {
             variant="ghost"
             size="sm"
             onClick={onEditFlight}
-            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+            className="text-primary hover:text-primary hover:bg-primary/10"
           >
             Edit
           </Button>

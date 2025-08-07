@@ -198,7 +198,7 @@ export default function TripDetailsStep({
                   p-3 rounded-lg border cursor-pointer transition-all
                   ${
                     activities.includes(activity.id)
-                      ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500 ring-opacity-50'
+                      ? 'bg-primary/10 border-primary ring-2 ring-primary/40'
                       : 'hover:bg-gray-50'
                   }
                 `}
@@ -228,7 +228,7 @@ export default function TripDetailsStep({
                   p-3 rounded-lg border cursor-pointer transition-all
                   ${
                     accommodation === option.id
-                      ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500 ring-opacity-50'
+                      ? 'bg-primary/10 border-primary ring-2 ring-primary/40'
                       : 'hover:bg-gray-50'
                   }
                 `}
@@ -258,7 +258,7 @@ export default function TripDetailsStep({
                   p-3 rounded-lg border cursor-pointer transition-all
                   ${
                     companions.includes(companion.id)
-                      ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500 ring-opacity-50'
+                      ? 'bg-primary/10 border-primary ring-2 ring-primary/40'
                       : 'hover:bg-gray-50'
                   }
                 `}
@@ -288,7 +288,7 @@ export default function TripDetailsStep({
                   p-3 rounded-lg border cursor-pointer transition-all
                   ${
                     amenities.includes(amenity.id)
-                      ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500 ring-opacity-50'
+                      ? 'bg-primary/10 border-primary ring-2 ring-primary/40'
                       : 'hover:bg-gray-50'
                   }
                 `}

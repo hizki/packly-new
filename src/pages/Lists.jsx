@@ -154,19 +154,19 @@ export default function ListsPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <h1
-            className="text-2xl font-bold"
+            className="text-2xl font-bold text-foreground"
             onClick={() => navigate(createPageUrl('Home'))}
           >
             My Packing Lists
           </h1>
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="Search lists..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 bg-background"
               />
             </div>
             <Tabs
@@ -196,13 +196,13 @@ export default function ListsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={list.is_favorite ? 'text-yellow-400' : 'text-gray-400'}
+                        className={list.is_favorite ? 'text-yellow-400' : 'text-muted-foreground'}
                         onClick={() => toggleFavorite(list)}
                       >
                         <Star className="w-5 h-5" />
                       </Button>
                     </div>
-                    <p className="text-gray-500 mt-1">
+                    <p className="text-muted-foreground mt-1">
                       {format(getDateRange(list).start, 'MMM d')} -{' '}
                       {format(getDateRange(list).end, 'MMM d, yyyy')}
                     </p>
@@ -234,7 +234,7 @@ export default function ListsPage() {
 
                 <div className="mt-4 border-t pt-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-gray-600">
+                   <div className="flex items-center gap-2 text-muted-foreground">
                       <ListChecks className="w-4 h-4" />
                       <span className="text-sm">
                         {list.items
@@ -257,9 +257,9 @@ export default function ListsPage() {
 
           {filteredLists.length === 0 && (
             <div className="text-center py-12">
-              <ListChecks className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No lists found</h3>
-              <p className="text-gray-500">
+              <ListChecks className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No lists found</h3>
+              <p className="text-muted-foreground">
                 {searchQuery
                   ? 'Try adjusting your search terms'
                   : activeTab === 'favorites'
@@ -267,7 +267,7 @@ export default function ListsPage() {
                     : 'Start by creating your first packing list'}
               </p>
               <Button
-                className="mt-4 bg-blue-600 hover:bg-blue-700"
+                className="mt-4"
                 onClick={() => navigate(createPageUrl('New'))}
               >
                 Create New List

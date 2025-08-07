@@ -223,10 +223,10 @@ export default function HomePage() {
               className="h-24 w-auto cursor-pointer"
             />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Welcome, {user?.full_name?.split(' ')[0] || 'Traveler'}
           </h1>
-          <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
             Never forget a thing. Create smart packing lists tailored to your trips.
           </p>
 
@@ -302,7 +302,6 @@ export default function HomePage() {
           <Link to={createPageUrl('New')}>
             <Button
               size="lg"
-              className="bg-blue-600 hover:bg-blue-700"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create New Trip

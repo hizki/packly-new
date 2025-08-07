@@ -92,7 +92,7 @@ export default function ReviewStep({
         return <span className="text-lg">☁️</span>;
       case 'rain':
       case 'drizzle':
-        return <CloudRain className="w-4 h-4 text-blue-500" />;
+        return <CloudRain className="w-4 h-4 text-primary" />;
       default:
         return <span className="text-lg">🌤️</span>;
     }
@@ -193,7 +193,7 @@ export default function ReviewStep({
           )}
 
           {/* Trip Summary */}
-          <div className="p-4 bg-blue-50 rounded-lg">
+          <div className="p-4 bg-secondary rounded-lg">
             <h3 className="font-medium mb-1">Trip Summary</h3>
             <div className="space-y-2">
               {destinations.map((destination, index) => (
@@ -209,7 +209,7 @@ export default function ReviewStep({
                     </p>
                   </div>
                   {destination.weather && (
-                    <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full text-sm">
+                   <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full text-sm">
                       {getWeatherIcon(destination.weather.conditions)}
                       <span className="font-medium">
                         {destination.weather.min_temp}° - {destination.weather.max_temp}°C
@@ -229,14 +229,14 @@ export default function ReviewStep({
               ))}
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
-              <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-full text-xs">
+              <div className="flex items-center gap-1 bg-card px-2 py-1 rounded-full text-xs">
                 <span className="font-medium">Staying at:</span>
                 <span>{accommodationOptions.find(a => a.id === accommodation)?.label}</span>
               </div>
               {activities.map(activity => (
                 <span
                   key={activity}
-                  className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                  className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs"
                 >
                   {activity}
                 </span>
@@ -263,7 +263,7 @@ export default function ReviewStep({
                     d.weather.min_temp <= (settings.weather_sensitivity?.cold_threshold || 15)
                 ) && (
                   <div className="flex items-center gap-2 mb-2">
-                    <Thermometer className="text-blue-500 w-4 h-4" />
+                    <Thermometer className="text-primary w-4 h-4" />
                     <span>Pack warm clothing for cold weather.</span>
                   </div>
                 )}
@@ -281,7 +281,7 @@ export default function ReviewStep({
                   d => d.weather && d.weather.rain_chance && d.weather.rain_chance !== 'none'
                 ) && (
                   <div className="flex items-center gap-2">
-                    <CloudRain className="text-blue-500 w-4 h-4" />
+                    <CloudRain className="text-primary w-4 h-4" />
                     <span>
                       {destinations.some(d => d.weather && d.weather.rain_chance === 'strong')
                         ? 'Rain is very likely - pack waterproof gear!'

@@ -61,6 +61,29 @@ export default function NewListPage() {
   const inputRefs = useRef([]);
   const autocompleteRefs = useRef([]);
   const mapInstance = useRef(null);
+  const primaryHexRef = useRef('#3b82f6');
+
+  const parsePrimaryToHex = () => {
+    try {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+      // Expecting "H S% L%"
+      const [hStr, sStr, lStr] = raw.split(' ');
+      const h = parseFloat(hStr);
+      const s = parseFloat(sStr.replace('%', '')) / 100;
+      const l = parseFloat(lStr.replace('%', '')) / 100;
+      const a = s * Math.min(l, 1 - l);
+      const f = n => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+        return Math.round(255 * color)
+          .toString(16)
+          .padStart(2, '0');
+      };
+      primaryHexRef.current = `#${f(0)}${f(8)}${f(4)}`;
+    } catch (e) {
+      primaryHexRef.current = '#3b82f6';
+    }
+  };
 
   const [formData, setFormData] = useState({
     destinations: [
@@ -323,6 +346,7 @@ export default function NewListPage() {
 
   const initializeGoogleMaps = () => {
     console.log('Initializing Google Maps...');
+    parsePrimaryToHex();
 
     // Check if API key is available
     if (!mapsApiKeyRef.current || mapsApiKeyRef.current === 'your_google_maps_api_key') {
@@ -396,6 +420,15 @@ export default function NewListPage() {
           zoomControl: true, // Keep zoom controls
           keyboardShortcuts: false, // Disable keyboard camera controls
           clickableIcons: false, // Disable clickable POI icons that can trigger camera
+          styles: [
+            { featureType: 'administrative', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+            { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+            { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+            { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+            { featureType: 'road', elementType: 'geometry', stylers: [{ saturation: -60, lightness: 10 }] },
+            { featureType: 'water', stylers: [{ saturation: -20, lightness: 20 }] },
+            { featureType: 'landscape', stylers: [{ saturation: -50, lightness: 10 }] },
+          ],
           restriction: {
             latLngBounds: {
               north: 85,
@@ -458,6 +491,15 @@ export default function NewListPage() {
             position: destination.coordinates,
             map: map,
             title: destination.location,
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 7,
+              fillOpacity: 1,
+              fillColor: primaryHexRef.current,
+              strokeOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 2,
+            },
           });
 
           markers.push(marker);
@@ -504,6 +546,15 @@ export default function NewListPage() {
               position: place.geometry.location,
               map: map,
               title: locationName,
+              icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                scale: 7,
+                fillOpacity: 1,
+                fillColor: primaryHexRef.current,
+                strokeOpacity: 1,
+                strokeColor: '#ffffff',
+                strokeWeight: 2,
+              },
             });
 
             markers[index] = marker;
@@ -1713,7 +1764,7 @@ export default function NewListPage() {
                         <span className="text-2xl">{activity.icon}</span>
                         <span className="text-sm font-medium">{activity.label}</span>
                         {formData.activities.includes(activity.id) && (
-                          <Check className="w-4 h-4 text-blue-600" />
+                          <Check className="w-4 h-4 text-primary" />
                         )}
                       </div>
                     </div>
@@ -1744,7 +1795,7 @@ export default function NewListPage() {
                         <span className="text-2xl">{option.icon}</span>
                         <span className="text-sm font-medium">{option.label}</span>
                         {formData.accommodation.includes(option.id) && (
-                          <Check className="w-4 h-4 text-blue-600" />
+                          <Check className="w-4 h-4 text-primary" />
                         )}
                       </div>
                     </div>
@@ -1775,7 +1826,7 @@ export default function NewListPage() {
                         <span className="text-2xl">{option.icon}</span>
                         <span className="text-sm font-medium">{option.label}</span>
                         {formData.companions.includes(option.id) && (
-                          <Check className="w-4 h-4 text-blue-600" />
+                          <Check className="w-4 h-4 text-primary" />
                         )}
                       </div>
                     </div>
@@ -1870,7 +1921,7 @@ export default function NewListPage() {
                     </ul>
                   </div>
                 )}
-                <div className="p-4 bg-blue-50 rounded-lg">
+                    <div className="p-4 bg-secondary rounded-lg">
                   <h3 className="font-medium mb-1">Trip Summary</h3>
                   <div className="space-y-2">
                     {formData.destinations.map((destination, index) => (
@@ -1929,7 +1980,7 @@ export default function NewListPage() {
                     {formData.activities.map(activity => (
                       <span
                         key={activity}
-                        className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                        className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs"
                       >
                         {activity}
                       </span>
