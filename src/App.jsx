@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 import Pages from '@/pages/index.jsx';
+import ThemeProvider from '@/components/ui/theme-provider.jsx';
 import LoginPage from '@/components/auth/LoginPage.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import { User } from '@/api/auth';
@@ -88,19 +89,19 @@ function App() {
   // Show login page if no user is authenticated
   if (!user) {
     return (
-      <>
+      <ThemeProvider>
         <LoginPage />
         <Toaster />
-      </>
+      </ThemeProvider>
     );
   }
 
   // Show main app if user is authenticated
   return (
-    <>
+    <ThemeProvider>
       <Pages />
       <Toaster />
-    </>
+    </ThemeProvider>
   );
 }
 

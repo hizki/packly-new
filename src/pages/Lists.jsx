@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import LottieSpinner from '../components/ui/lottie-spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 
 export default function ListsPage() {
@@ -129,11 +130,21 @@ export default function ListsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full p-6">
-        <LottieSpinner
-          size={120}
-          color="#3b82f6"
-        />
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <Skeleton className="h-8 w-48" />
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <Skeleton className="h-9 w-64" />
+              <Skeleton className="h-9 w-40" />
+            </div>
+          </div>
+          <div className="grid gap-4">
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+          </div>
+        </div>
       </div>
     );
   }

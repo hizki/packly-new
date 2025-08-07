@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format, differenceInDays } from 'date-fns';
 import LottieSpinner from '../components/ui/lottie-spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { withRetry } from '../components/utils/api-helpers';
 
@@ -192,11 +193,18 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full p-6">
-        <LottieSpinner
-          size={120}
-          color="#3b82f6"
-        />
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="text-center py-8">
+            <Skeleton className="h-24 w-24 rounded-full mx-auto mb-6" />
+            <Skeleton className="h-8 w-64 mx-auto mb-4" />
+            <Skeleton className="h-4 w-80 mx-auto" />
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Skeleton className="h-48" />
+            <Skeleton className="h-48" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -223,21 +231,18 @@ export default function HomePage() {
           </p>
 
           {upcomingTrip && (
-            <Card className="mb-8 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+            <Card className="mb-8 border-l-4 border-l-blue-500">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-white/20 p-3 rounded-full">
-                      <Plane className="w-6 h-6" />
+                    <div className="bg-blue-50 p-3 rounded-full">
+                      <Plane className="w-6 h-6 text-blue-600" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-bold text-lg">
-                        Get Ready! You&apos;re traveling{' '}
-                        {getDaysUntil(upcomingTrip.destinations[0].start_date)}
-                      </h3>
+                      <h3 className="font-semibold text-lg">Get Ready! You&apos;re traveling {getDaysUntil(upcomingTrip.destinations[0].start_date)}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <MapPin className="w-4 h-4" />
-                        <span>
+                        <MapPin className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
                           {upcomingTrip.destinations[0].location}
                           <span className="mx-1">•</span>
                           {formatDate(upcomingTrip.destinations[0].start_date)}
@@ -247,7 +252,7 @@ export default function HomePage() {
                   </div>
                   <Button
                     onClick={() => handleListClick(upcomingTrip.id)}
-                    variant="secondary"
+                    variant="default"
                     className="whitespace-nowrap"
                   >
                     View Packing List
@@ -258,24 +263,24 @@ export default function HomePage() {
           )}
 
           {upcomingTips && (
-            <Card className="mb-8 bg-gradient-to-r from-purple-500 to-pink-600 text-white">
+            <Card className="mb-8 border-l-4 border-l-purple-500">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-white/20 p-3 rounded-full">
+                    <div className="bg-purple-50 p-3 rounded-full">
                       {upcomingTips.type === 'day_before' ? (
-                        <Calendar className="w-6 h-6" />
+                        <Calendar className="w-6 h-6 text-purple-600" />
                       ) : (
-                        <Home className="w-6 h-6" />
+                        <Home className="w-6 h-6 text-purple-600" />
                       )}
                     </div>
                     <div className="text-left">
-                      <h3 className="font-bold text-lg">
+                      <h3 className="font-semibold text-lg">
                         {upcomingTips.type === 'day_before'
                           ? 'Time to prepare for your trip!'
                           : 'Ready to leave?'}
                       </h3>
-                      <p className="text-white/80">
+                      <p className="text-muted-foreground">
                         {upcomingTips.type === 'day_before'
                           ? `${upcomingTips.tips.length} preparation tasks to complete`
                           : 'Check these items before heading out'}
@@ -283,7 +288,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <Button
-                    variant="secondary"
+                    variant="default"
                     className="whitespace-nowrap"
                     onClick={() => navigate(createPageUrl(`ListDetail?id=${upcomingTips.listId}`))}
                   >

@@ -6,13 +6,15 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { Bell, Sun, Thermometer, LogOut } from 'lucide-react';
+import { Bell, Sun, Moon, Thermometer, LogOut } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import LottieSpinner from '@/components/ui/lottie-spinner';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import DeleteAccountDialog from '../components/settings/DeleteAccountDialog';
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme?.() || { theme: 'system', setTheme: () => {} };
   const [settings, setSettings] = useState({
     notifications: true,
     weather_sensitivity: {
@@ -256,6 +258,25 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="flex items-center justify-between mb-4">
+              <Label htmlFor="theme_toggle">Dark mode</Label>
+              <Button
+                id="theme_toggle"
+                variant="outline"
+                size="sm"
+                onClick={() => setTheme?.(theme === 'dark' ? 'light' : 'dark')}
+              >
+                {theme === 'dark' ? (
+                  <>
+                    <Sun className="w-4 h-4 mr-2" /> Light
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-4 h-4 mr-2" /> Dark
+                  </>
+                )}
+              </Button>
+            </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="minimal_mode">Minimal mode</Label>
               <Switch

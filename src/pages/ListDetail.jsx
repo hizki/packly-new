@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -39,9 +38,11 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import LottieSpinner from '../components/ui/lottie-spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { User } from '@/api/entities';
 import { toast } from '@/components/ui/use-toast';
 import AnimatedListItem from '../components/list/AnimatedListItem';
+import { Input } from '@/components/ui/input';
 import ConfettiEffect from '../components/animated/ConfettiEffect';
 import { motion, AnimatePresence } from 'framer-motion';
 import FlightDetailsDialog from '../components/flights/FlightDetailsDialog';
@@ -75,6 +76,8 @@ export default function ListDetailPage() {
   const [collapsedCategories, setCollapsedCategories] = useState(new Set());
   const categoryCompletionRef = useRef({});
   const tripNameInputRef = useRef(null);
+  const [newInlineItem, setNewInlineItem] = useState({ name: '', category: 'additional', quantity: 1, is_packed: false, weather_dependent: false });
+  const [inlineCategoryTarget, setInlineCategoryTarget] = useState(null);
 
   // Track pending items to prevent race conditions
   const [pendingItemIds, setPendingItemIds] = useState(new Set());
@@ -347,6 +350,21 @@ export default function ListDetailPage() {
     }
   };
 
+  const handleInlineAdd = async category => {
+    if (!newInlineItem.name.trim()) return;
+    try {
+      const emoji = await generateEmojiForItem(newInlineItem.name, category, list.activities);
+      const itemWithEmoji = { ...newInlineItem, category, emoji };
+      const updatedItems = [...(list.items || []), itemWithEmoji];
+      await PackingList.update(list.id, { items: updatedItems });
+      setList({ ...list, items: updatedItems });
+      setNewInlineItem({ name: '', category: 'additional', quantity: 1, is_packed: false, weather_dependent: false });
+      setInlineCategoryTarget(null);
+    } catch (e) {
+      toast({ title: 'Error', description: 'Failed to add item', variant: 'destructive' });
+    }
+  };
+
   const handleUpdateItemQuantity = async (itemIndex, newQuantity) => {
     if (!list) return;
 
@@ -596,11 +614,22 @@ export default function ListDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full p-6">
-        <LottieSpinner
-          size={120}
-          color="#3b82f6"
-        />
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <Skeleton className="h-6 w-64" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-9 rounded-full" />
+              <Skeleton className="h-9 w-20" />
+            </div>
+          </div>
+          <Skeleton className="h-12" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-40" />
+        </div>
       </div>
     );
   }
@@ -997,6 +1026,33 @@ export default function ListDetailPage() {
                           );
                         })}
                       </AnimatePresence>
+                    </div>
+                    {/* Inline Add Row */}
+                    <div className="flex items-center gap-2 pt-3">
+                      <Input
+                        placeholder={`Add ${category} item…`}
+                        value={inlineCategoryTarget === category ? newInlineItem.name : ''}
+                        onFocus={() => setInlineCategoryTarget(category)}
+                        onChange={e => {
+                          setInlineCategoryTarget(category);
+                          setNewInlineItem(prev => ({ ...prev, name: e.target.value }));
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleInlineAdd(category);
+                          if (e.key === 'Escape') {
+                            setInlineCategoryTarget(null);
+                            setNewInlineItem(prev => ({ ...prev, name: '' }));
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleInlineAdd(category)}
+                        disabled={inlineCategoryTarget !== category || !newInlineItem.name.trim()}
+                      >
+                        Add
+                      </Button>
                     </div>
                   </CardContent>
                 )}

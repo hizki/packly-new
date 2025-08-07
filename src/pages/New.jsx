@@ -24,6 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
 import LottieSpinner from '../components/ui/lottie-spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { addDays } from 'date-fns';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -1417,55 +1418,44 @@ export default function NewListPage() {
         <div className="mb-8">
           <div className="relative max-w-md mx-auto">
             {/* Progress Line Background */}
-            <div className="absolute top-4 left-8 right-8 h-0.5 bg-gray-200"></div>
+            <div className="absolute top-4 left-8 right-8 h-0.5 bg-muted" />
 
             {/* Active Progress Line */}
             <div
-              className="absolute top-4 left-8 h-0.5 bg-blue-600 transition-all duration-300"
-              style={{
-                width: step === 1 ? '0%' : step === 2 ? 'calc(50% - 2rem)' : 'calc(100% - 4rem)',
-              }}
-            ></div>
+              className="absolute top-4 left-8 h-0.5 bg-primary transition-all duration-300"
+              style={{ width: step === 1 ? '0%' : step === 2 ? 'calc(50% - 2rem)' : 'calc(100% - 4rem)' }}
+            />
 
             {/* Steps */}
             <div className="relative flex justify-between items-center">
               {/* Step 1 */}
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm 
-                    font-semibold transition-colors duration-200 ${
-                    step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-                  }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
                 >
                   1
                 </div>
-                <span className="text-xs mt-2 font-medium text-gray-600">Destinations</span>
+                <span className="text-xs mt-2 font-medium text-muted-foreground">Destinations</span>
               </div>
 
               {/* Step 2 */}
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm 
-                    font-semibold transition-colors duration-200 ${
-                    step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-                  }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
                 >
                   2
                 </div>
-                <span className="text-xs mt-2 font-medium text-gray-600">Details</span>
+                <span className="text-xs mt-2 font-medium text-muted-foreground">Details</span>
               </div>
 
               {/* Step 3 */}
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm 
-                    font-semibold transition-colors duration-200 ${
-                    step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-                  }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
                 >
                   3
                 </div>
-                <span className="text-xs mt-2 font-medium text-gray-600">Review</span>
+                <span className="text-xs mt-2 font-medium text-muted-foreground">Review</span>
               </div>
             </div>
           </div>
@@ -1675,9 +1665,31 @@ export default function NewListPage() {
             </CardHeader>
             <CardContent className="space-y-8">
               {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <LottieSpinner size={60} color="#3b82f6" />
-                  <span className="ml-3 text-gray-600">Loading trip options...</span>
+                <div className="py-4 space-y-6">
+                  <div>
+                    <Skeleton className="h-5 w-64 mb-3" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <Skeleton key={i} className="h-20" />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Skeleton className="h-5 w-64 mb-3" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <Skeleton key={i} className="h-20" />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Skeleton className="h-5 w-64 mb-3" />
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <Skeleton key={i} className="h-20" />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -2049,16 +2061,16 @@ export default function NewListPage() {
         <button
           onClick={handleFloatingNext}
           disabled={!canProceedToNext() || isProcessing}
-          className="h-14 w-14 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-full flex items-center justify-center shadow-lg transition-all duration-200 group"
+          className="h-14 w-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 group bg-gradient-to-tr from-primary to-accent disabled:from-muted disabled:to-muted disabled:cursor-not-allowed"
         >
           {isProcessing ? (
-            <Loader2 className="w-6 h-6 text-white animate-spin" />
+            <Loader2 className="w-6 h-6 text-primary-foreground animate-spin" />
           ) : (
-            <ArrowRight className="w-6 h-6 text-white group-hover:translate-x-0.5 transition-transform" />
+            <ArrowRight className="w-6 h-6 text-primary-foreground group-hover:translate-x-0.5 transition-transform" />
           )}
         </button>
         {!isProcessing && (
-          <div className="absolute -top-10 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+          <div className="absolute -top-10 right-0 bg-foreground text-background text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
             {getNextButtonText()}
           </div>
         )}
