@@ -44,7 +44,7 @@ import { toast } from '@/components/ui/use-toast';
 import AnimatedListItem from '../components/list/AnimatedListItem';
 import { Input } from '@/components/ui/input';
 import ConfettiEffect from '../components/animated/ConfettiEffect';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import FlightDetailsDialog from '../components/flights/FlightDetailsDialog';
 import FlightDetailsCard from '../components/flights/FlightDetailsCard';
 import { TipList } from '@/api/entities';
@@ -52,6 +52,7 @@ import TipListSection from '../components/tips/TipListSection';
 import { generateEmojiForItem } from '@/utils/emojiGenerator';
 
 export default function ListDetailPage() {
+  const CATEGORY_ORDER = ['clothing', 'toiletries', 'tech', 'gear', 'essentials', 'additional'];
   const navigate = useNavigate();
   const [list, setList] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,8 @@ export default function ListDetailPage() {
   const [newInlineItem, setNewInlineItem] = useState({ name: '', category: 'additional', quantity: 1, is_packed: false, weather_dependent: false });
   const [inlineCategoryTarget, setInlineCategoryTarget] = useState(null);
   const [selectedItemIndices, setSelectedItemIndices] = useState(new Set());
+  const categoryHeaderRefs = useRef({});
+  const itemRowRefs = useRef({});
 
   // Track pending items to prevent race conditions
   const [pendingItemIds, setPendingItemIds] = useState(new Set());
@@ -129,29 +132,26 @@ export default function ListDetailPage() {
     }
   }, [list, selectedItemIndices, resetSelection]);
 
-  const handleReorderCategory = useCallback(
-    async (category, newOrder) => {
-      if (!list?.items) return;
-      const reorderedCategoryItems = newOrder;
-      const updatedItems = [];
-      // Rebuild items array by replacing the slice of this category with newOrder
-      const original = list.items;
-      const categoryQueue = [...reorderedCategoryItems];
-      for (const item of original) {
-        if (item.category === category) {
-          updatedItems.push(categoryQueue.shift() || item);
-        } else {
-          updatedItems.push(item);
+  const scrollToNextCategory = useCallback(
+    (completedCategory, itemsSource) => {
+      const itemsArr = itemsSource || list?.items || [];
+      const currentIdx = CATEGORY_ORDER.indexOf(completedCategory);
+      // Find next category below with any items
+      const nextCategory = CATEGORY_ORDER.slice(currentIdx + 1).find(cat =>
+        itemsArr.some(i => i.category === cat),
+      );
+      if (nextCategory) {
+        const el = categoryHeaderRefs.current[nextCategory];
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.scrollY;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+          return;
         }
       }
-      setList({ ...list, items: updatedItems });
-      try {
-        await PackingList.update(list.id, { items: updatedItems });
-      } catch (e) {
-        console.warn('Failed to persist reorder', e);
-      }
+      // If no next category is found or no ref, scroll as far as possible
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
     },
-    [list],
+    [CATEGORY_ORDER, list?.items],
   );
 
   useEffect(() => {
@@ -283,10 +283,9 @@ export default function ListDetailPage() {
   const initializeCollapsedState = list => {
     if (!list.items) return;
 
-    const categories = ['clothing', 'toiletries', 'tech', 'gear', 'essentials', 'additional'];
     const initialCollapsed = new Set();
 
-    categories.forEach(category => {
+    CATEGORY_ORDER.forEach(category => {
       const categoryItems = list.items.filter(item => item.category === category);
       const isComplete = categoryItems.length > 0 && categoryItems.every(item => item.is_packed);
 
@@ -315,6 +314,15 @@ export default function ListDetailPage() {
     const updatedItems = [...list.items];
     const newPackedState = !updatedItems[itemIndex].is_packed;
 
+    // Capture the clicked row's vertical position before state changes
+    const clickedRef = itemRowRefs.current[itemIndex];
+    const scrollContainer = clickedRef?.closest('main') || document.querySelector('main') || null;
+    const containerRect = scrollContainer?.getBoundingClientRect();
+    const clickedRect = clickedRef?.getBoundingClientRect();
+    const clickedTop = clickedRect && containerRect && scrollContainer
+      ? clickedRect.top - containerRect.top + scrollContainer.scrollTop
+      : null;
+
     updatedItems[itemIndex] = {
       ...updatedItems[itemIndex],
       is_packed: newPackedState,
@@ -325,13 +333,26 @@ export default function ListDetailPage() {
       await PackingList.update(list.id, { items: updatedItems });
 
       // Only update UI after successful API call
-      setList({
-        ...list,
-        items: updatedItems,
-      });
+      setList({ ...list, items: updatedItems });
 
       // Check category completion after successful update
       checkCategoryCompletion(updatedItems, updatedItems[itemIndex].category);
+
+      // After state settles, scroll so the next unchecked item aligns to the old row position
+      if (clickedTop != null) {
+        setTimeout(() => {
+          const nextIndex = findNextUncheckedIndex(updatedItems, itemIndex);
+          if (nextIndex != null) {
+            const nextRef = itemRowRefs.current[nextIndex];
+            if (nextRef && scrollContainer) {
+              const nextRect = nextRef.getBoundingClientRect();
+              const nextTop = nextRect.top - containerRect.top + scrollContainer.scrollTop;
+              const delta = nextTop - clickedTop;
+              scrollContainer.scrollTo({ top: scrollContainer.scrollTop + delta, behavior: 'smooth' });
+            }
+          }
+        }, 0);
+      }
     } catch (error) {
       console.error('Error updating item:', error);
       toast({
@@ -347,6 +368,37 @@ export default function ListDetailPage() {
         return newSet;
       });
     }
+  };
+
+  const findNextUncheckedIndex = (itemsArr, fromIndex) => {
+    // Search forward for next unchecked within the same category.
+    const fromItem = itemsArr[fromIndex];
+    const category = fromItem?.category;
+    if (category) {
+      for (let i = fromIndex + 1; i < itemsArr.length; i += 1) {
+        if (itemsArr[i].category === category && !itemsArr[i].is_packed) return i;
+      }
+      for (let i = 0; i < fromIndex; i += 1) {
+        if (itemsArr[i].category === category && !itemsArr[i].is_packed) return i;
+      }
+    }
+
+    // If none left in current category, move to the next category in order.
+    const currentCategoryIndex = CATEGORY_ORDER.indexOf(category || '');
+    for (let c = currentCategoryIndex + 1; c < CATEGORY_ORDER.length; c += 1) {
+      const cat = CATEGORY_ORDER[c];
+      const idx = itemsArr.findIndex(it => it.category === cat && !it.is_packed);
+      if (idx !== -1) return idx;
+    }
+
+    // If none ahead, wrap around to earlier categories.
+    for (let c = 0; c < currentCategoryIndex; c += 1) {
+      const cat = CATEGORY_ORDER[c];
+      const idx = itemsArr.findIndex(it => it.category === cat && !it.is_packed);
+      if (idx !== -1) return idx;
+    }
+
+    return null;
   };
 
   const checkCategoryCompletion = (items, category) => {
@@ -1023,7 +1075,7 @@ export default function ListDetailPage() {
             <p className="text-sm text-muted-foreground mt-2">{packedCount} of {totalCount} items packed ({packedPct}%)</p>
           </div>
 
-          {['clothing', 'toiletries', 'tech', 'gear', 'essentials', 'additional'].map(category => {
+          {CATEGORY_ORDER.map(category => {
             const categoryItems = list.items
               ? list.items.filter(item => item.category === category)
               : [];
@@ -1034,7 +1086,10 @@ export default function ListDetailPage() {
 
             return (
               <Card key={category}>
-                <CardHeader className="pb-2 pt-2 sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75">
+                <CardHeader
+                  ref={el => { categoryHeaderRefs.current[category] = el; }}
+                  className="pb-2 pt-2 sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75"
+                >
                   <div
                     className="flex items-center justify-between cursor-pointer rounded-md p-1 -m-1"
                     onClick={() => toggleCategoryCollapse(category)}
@@ -1069,33 +1124,26 @@ export default function ListDetailPage() {
                   <CardContent className="pt-0">
                     <div className="divide-y">
                       <AnimatePresence initial={false}>
-                        <Reorder.Group
-                          axis="y"
-                          values={categoryItems}
-                          onReorder={newOrder => handleReorderCategory(category, newOrder)}
-                        >
-                          {categoryItems.map((item, index) => {
-                            const itemIndex = list.items.findIndex(i => i === item);
-                            const isSelected = selectedItemIndices.has(itemIndex);
-                            return (
-                              <Reorder.Item key={`${item.name}-${index}`} value={item}>
-                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}>
-                                  <AnimatedListItem
-                                    item={item}
-                                    onToggle={() => toggleItemPacked(itemIndex)}
-                                    onUpdateQuantity={quantity => handleUpdateItemQuantity(itemIndex, quantity)}
-                                    onUpdateEmoji={emoji => handleUpdateItemEmoji(itemIndex, emoji)}
-                                    onDelete={isEditMode ? () => handleRemoveItem(itemIndex) : undefined}
-                                    isEditMode={isEditMode}
-                                    isSelected={isSelected}
-                                    onSelectToggle={() => toggleSelectIndex(itemIndex)}
-                                    isPending={pendingItemIds.has(`${list.id}-${itemIndex}`)}
-                                  />
-                                </motion.div>
-                              </Reorder.Item>
-                            );
-                          })}
-                        </Reorder.Group>
+                        {categoryItems.map((item, index) => {
+                          const itemIndex = list.items.findIndex(i => i === item);
+                          const isSelected = selectedItemIndices.has(itemIndex);
+                          return (
+                            <motion.div key={`${item.name}-${index}`} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}>
+                              <AnimatedListItem
+                                ref={el => { itemRowRefs.current[itemIndex] = el; }}
+                                item={item}
+                                onToggle={() => toggleItemPacked(itemIndex)}
+                                onUpdateQuantity={quantity => handleUpdateItemQuantity(itemIndex, quantity)}
+                                onUpdateEmoji={emoji => handleUpdateItemEmoji(itemIndex, emoji)}
+                                onDelete={isEditMode ? () => handleRemoveItem(itemIndex) : undefined}
+                                isEditMode={isEditMode}
+                                isSelected={isSelected}
+                                onSelectToggle={() => toggleSelectIndex(itemIndex)}
+                                isPending={pendingItemIds.has(`${list.id}-${itemIndex}`)}
+                              />
+                            </motion.div>
+                          );
+                        })}
                       </AnimatePresence>
                     </div>
                     {/* Inline Add Row */}

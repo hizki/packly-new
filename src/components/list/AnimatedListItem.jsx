@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import AnimatedCheckbox from '../animated/AnimatedCheckbox';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { EmojiPicker } from '@/components/ui/emoji-picker';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 
-const AnimatedListItem = ({
+const AnimatedListItem = React.forwardRef(({
   item,
   onToggle,
   onUpdateQuantity,
@@ -16,7 +16,7 @@ const AnimatedListItem = ({
   isSelected = false,
   onSelectToggle,
   isPending = false,
-}) => {
+}, ref) => {
   const [quantity, setQuantity] = useState(item.quantity);
 
   const handleQuantityChange = newQuantity => {
@@ -48,6 +48,7 @@ const AnimatedListItem = ({
       role={isEditMode ? 'listitem' : undefined}
       aria-selected={isEditMode ? isSelected : undefined}
       onClick={handleRowClick}
+      ref={ref}
     >
       <AnimatedCheckbox
         checked={item.is_packed}
@@ -128,6 +129,8 @@ const AnimatedListItem = ({
       )}
     </div>
   );
-};
+});
+
+AnimatedListItem.displayName = 'AnimatedListItem';
 
 export default AnimatedListItem;

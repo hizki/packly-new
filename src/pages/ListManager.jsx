@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Plus, Edit3, Trash2, ArrowLeft, Activity, Home, Users } from 'lucide-react';
+import { Plus, Edit3, Trash2, ArrowLeft, Activity, Home, Users, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import CustomListForm from '@/components/lists/CustomListForm';
@@ -215,25 +215,15 @@ export default function ListManagerPage() {
           </TabsList>
 
           {Object.entries(listTypes).map(([type, config]) => (
-            <TabsContent key={type} value={type} className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
-                    {config.icon}
-                    {config.name}
-                  </h2>
-                  <p className="text-gray-500 mt-1 text-sm sm:text-base">{config.description}</p>
-                </div>
-                <Button
-                  onClick={() => {
-                    setActiveType(type);
-                    setShowCustomForm(true);
-                  }}
-                  className="gap-2 flex-shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add
-                </Button>
+            <TabsContent key={type} value={type} className="space-y-4">
+              {/* Concise explainer (no duplicate title) */}
+              <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground flex items-start gap-2">
+                <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                <p>
+                  Lists are reusable building blocks. When you set up a trip, items from your
+                  selected {config.name.toLowerCase()} are pulled into your packing list. Keep them
+                  short and focused; you can always adjust per trip.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -279,10 +269,36 @@ export default function ListManagerPage() {
                    <div className="col-span-full text-center py-12 text-muted-foreground">
                     <div className="text-4xl mb-2">📋</div>
                     <p>No {config.name.toLowerCase()} lists yet</p>
-                    <p className="text-sm">Create your first custom list to get started</p>
+                      <p className="text-sm mb-4">Create your first custom list to get started</p>
+                      <Button
+                        onClick={() => {
+                          setActiveType(type);
+                          setShowCustomForm(true);
+                        }}
+                        className="gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add
+                      </Button>
                   </div>
                 )}
               </div>
+
+              {/* Bottom Add button */}
+              {lists[type].length > 0 && (
+                <div className="pt-2">
+                  <Button
+                    onClick={() => {
+                      setActiveType(type);
+                      setShowCustomForm(true);
+                    }}
+                    className="gap-2 w-full sm:w-auto"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add
+                  </Button>
+                </div>
+              )}
             </TabsContent>
           ))}
         </Tabs>
