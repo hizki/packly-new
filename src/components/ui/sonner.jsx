@@ -5,7 +5,11 @@ const Toaster = ({ ...props }) => {
     <Sonner
       theme="light"
       className="toaster group"
+      richColors
+      position="bottom-right"
+      expand
       toastOptions={{
+        duration: 3000,
         classNames: {
           toast:
             'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',

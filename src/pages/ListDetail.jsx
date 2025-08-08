@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { PackingList } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,7 @@ import { toast } from '@/components/ui/use-toast';
 import AnimatedListItem from '../components/list/AnimatedListItem';
 import { Input } from '@/components/ui/input';
 import ConfettiEffect from '../components/animated/ConfettiEffect';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import FlightDetailsDialog from '../components/flights/FlightDetailsDialog';
 import FlightDetailsCard from '../components/flights/FlightDetailsCard';
 import { TipList } from '@/api/entities';
@@ -78,9 +78,81 @@ export default function ListDetailPage() {
   const tripNameInputRef = useRef(null);
   const [newInlineItem, setNewInlineItem] = useState({ name: '', category: 'additional', quantity: 1, is_packed: false, weather_dependent: false });
   const [inlineCategoryTarget, setInlineCategoryTarget] = useState(null);
+  const [selectedItemIndices, setSelectedItemIndices] = useState(new Set());
 
   // Track pending items to prevent race conditions
   const [pendingItemIds, setPendingItemIds] = useState(new Set());
+
+  const packedCount = useMemo(() => (list?.items || []).filter(i => i.is_packed).length, [list]);
+  const totalCount = useMemo(() => (list?.items || []).length ?? 0, [list]);
+  const packedPct = useMemo(() => (totalCount > 0 ? Math.round((packedCount / totalCount) * 100) : 0), [packedCount, totalCount]);
+
+  const resetSelection = useCallback(() => setSelectedItemIndices(new Set()), []);
+  const toggleSelectIndex = useCallback((index) => {
+    setSelectedItemIndices(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index); else next.add(index);
+      return next;
+    });
+  }, []);
+
+  const selectAllInCategory = useCallback((category) => {
+    if (!list?.items) return;
+    const indices = list.items
+      .map((item, idx) => ({ item, idx }))
+      .filter(({ item }) => item.category === category)
+      .map(({ idx }) => idx);
+    setSelectedItemIndices(new Set(indices));
+  }, [list]);
+
+  const bulkUpdatePacked = useCallback(async (packed) => {
+    if (!list || selectedItemIndices.size === 0) return;
+    const updated = (list.items || []).map((item, idx) => selectedItemIndices.has(idx) ? { ...item, is_packed: packed } : item);
+    try {
+      await PackingList.update(list.id, { items: updated });
+      setList({ ...list, items: updated });
+      resetSelection();
+    } catch (e) {
+      toast({ title: 'Error', description: 'Bulk update failed', variant: 'destructive' });
+    }
+  }, [list, selectedItemIndices, resetSelection]);
+
+  const bulkDelete = useCallback(async () => {
+    if (!list || selectedItemIndices.size === 0) return;
+    const updated = (list.items || []).filter((_, idx) => !selectedItemIndices.has(idx));
+    try {
+      await PackingList.update(list.id, { items: updated });
+      setList({ ...list, items: updated });
+      resetSelection();
+    } catch (e) {
+      toast({ title: 'Error', description: 'Bulk delete failed', variant: 'destructive' });
+    }
+  }, [list, selectedItemIndices, resetSelection]);
+
+  const handleReorderCategory = useCallback(
+    async (category, newOrder) => {
+      if (!list?.items) return;
+      const reorderedCategoryItems = newOrder;
+      const updatedItems = [];
+      // Rebuild items array by replacing the slice of this category with newOrder
+      const original = list.items;
+      const categoryQueue = [...reorderedCategoryItems];
+      for (const item of original) {
+        if (item.category === category) {
+          updatedItems.push(categoryQueue.shift() || item);
+        } else {
+          updatedItems.push(item);
+        }
+      }
+      setList({ ...list, items: updatedItems });
+      try {
+        await PackingList.update(list.id, { items: updatedItems });
+      } catch (e) {
+        console.warn('Failed to persist reorder', e);
+      }
+    },
+    [list],
+  );
 
   useEffect(() => {
     const loadData = async () => {
@@ -945,22 +1017,10 @@ export default function ListDetailPage() {
               </Dialog>
             </div>
 
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full"
-                style={{
-                  width: `${
-                    list.items && list.items.length > 0
-                      ? (list.items.filter(item => item.is_packed).length / list.items.length) * 100
-                      : 0
-                  }%`,
-                }}
-              ></div>
+            <div className="w-full h-2.5 rounded-full bg-muted">
+              <div className="h-2.5 rounded-full bg-primary transition-[width] duration-200" style={{ width: `${packedPct}%` }} />
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              {list.items && list.items.filter(item => item.is_packed).length} of{' '}
-              {list.items ? list.items.length : 0} items packed
-            </p>
+            <p className="text-sm text-muted-foreground mt-2">{packedCount} of {totalCount} items packed ({packedPct}%)</p>
           </div>
 
           {['clothing', 'toiletries', 'tech', 'gear', 'essentials', 'additional'].map(category => {
@@ -974,57 +1034,68 @@ export default function ListDetailPage() {
 
             return (
               <Card key={category}>
-                <CardHeader className="pb-2 pt-2">
+                <CardHeader className="pb-2 pt-2 sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75">
                   <div
-                    className="flex items-center justify-between cursor-pointer hover:bg-gray-50 rounded-md p-1 -m-1"
+                    className="flex items-center justify-between cursor-pointer rounded-md p-1 -m-1"
                     onClick={() => toggleCategoryCollapse(category)}
                   >
-                    <CardTitle className="text-lg capitalize flex items-center">
+                    <CardTitle className="text-lg capitalize flex items-center gap-2">
                       {category}
-                      {isComplete && (
-                        <span className="ml-2 text-green-500 text-xs"> (Complete)</span>
-                      )}
+                      <Badge variant="secondary">{categoryItems.length}</Badge>
+                      {isComplete && <span className="ml-1 text-green-500 text-xs">Complete</span>}
                     </CardTitle>
-                    <div className="text-gray-500">
-                      {isCollapsed ? (
-                        <ChevronRight className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
+                    <div className="flex items-center gap-2">
+                      {isEditMode && (
+                        <div className="hidden sm:flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); selectAllInCategory(category); }}>Select all</Button>
+                          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); resetSelection(); }}>Clear</Button>
+                        </div>
                       )}
+                      <div className="text-muted-foreground">
+                        {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </div>
                     </div>
                   </div>
+                  {isEditMode && selectedItemIndices.size > 0 && (
+                    <div className="mt-2 flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">{selectedItemIndices.size} selected</span>
+                      <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); bulkUpdatePacked(true); }}>Pack</Button>
+                      <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); bulkUpdatePacked(false); }}>Unpack</Button>
+                      <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); bulkDelete(); }}>Delete</Button>
+                    </div>
+                  )}
                 </CardHeader>
                 {!isCollapsed && (
                   <CardContent className="pt-0">
                     <div className="divide-y">
-                      <AnimatePresence>
-                        {categoryItems.map((item, index) => {
-                          const itemIndex = list.items.findIndex(i => i === item);
-                          return (
-                            <motion.div
-                              key={index}
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, height: 0 }}
-                            >
-                              <AnimatedListItem
-                                item={item}
-                                onToggle={() => toggleItemPacked(itemIndex)}
-                                onUpdateQuantity={quantity =>
-                                  handleUpdateItemQuantity(itemIndex, quantity)
-                                }
-                                onUpdateEmoji={emoji =>
-                                  handleUpdateItemEmoji(itemIndex, emoji)
-                                }
-                                onDelete={
-                                  isEditMode ? () => handleRemoveItem(itemIndex) : undefined
-                                }
-                                isEditMode={isEditMode}
-                                isPending={pendingItemIds.has(`${list.id}-${itemIndex}`)}
-                              />
-                            </motion.div>
-                          );
-                        })}
+                      <AnimatePresence initial={false}>
+                        <Reorder.Group
+                          axis="y"
+                          values={categoryItems}
+                          onReorder={newOrder => handleReorderCategory(category, newOrder)}
+                        >
+                          {categoryItems.map((item, index) => {
+                            const itemIndex = list.items.findIndex(i => i === item);
+                            const isSelected = selectedItemIndices.has(itemIndex);
+                            return (
+                              <Reorder.Item key={`${item.name}-${index}`} value={item}>
+                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}>
+                                  <AnimatedListItem
+                                    item={item}
+                                    onToggle={() => toggleItemPacked(itemIndex)}
+                                    onUpdateQuantity={quantity => handleUpdateItemQuantity(itemIndex, quantity)}
+                                    onUpdateEmoji={emoji => handleUpdateItemEmoji(itemIndex, emoji)}
+                                    onDelete={isEditMode ? () => handleRemoveItem(itemIndex) : undefined}
+                                    isEditMode={isEditMode}
+                                    isSelected={isSelected}
+                                    onSelectToggle={() => toggleSelectIndex(itemIndex)}
+                                    isPending={pendingItemIds.has(`${list.id}-${itemIndex}`)}
+                                  />
+                                </motion.div>
+                              </Reorder.Item>
+                            );
+                          })}
+                        </Reorder.Group>
                       </AnimatePresence>
                     </div>
                     {/* Inline Add Row */}
@@ -1033,24 +1104,13 @@ export default function ListDetailPage() {
                         placeholder={`Add ${category} item…`}
                         value={inlineCategoryTarget === category ? newInlineItem.name : ''}
                         onFocus={() => setInlineCategoryTarget(category)}
-                        onChange={e => {
-                          setInlineCategoryTarget(category);
-                          setNewInlineItem(prev => ({ ...prev, name: e.target.value }));
-                        }}
+                        onChange={e => { setInlineCategoryTarget(category); setNewInlineItem(prev => ({ ...prev, name: e.target.value })); }}
                         onKeyDown={e => {
                           if (e.key === 'Enter') handleInlineAdd(category);
-                          if (e.key === 'Escape') {
-                            setInlineCategoryTarget(null);
-                            setNewInlineItem(prev => ({ ...prev, name: '' }));
-                          }
+                          if (e.key === 'Escape') { setInlineCategoryTarget(null); setNewInlineItem(prev => ({ ...prev, name: '' })); }
                         }}
                       />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleInlineAdd(category)}
-                        disabled={inlineCategoryTarget !== category || !newInlineItem.name.trim()}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => handleInlineAdd(category)} disabled={inlineCategoryTarget !== category || !newInlineItem.name.trim()}>
                         Add
                       </Button>
                     </div>

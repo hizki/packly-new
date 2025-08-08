@@ -13,6 +13,8 @@ const AnimatedListItem = ({
   onUpdateEmoji,
   onDelete,
   isEditMode = false,
+  isSelected = false,
+  onSelectToggle,
   isPending = false,
 }) => {
   const [quantity, setQuantity] = useState(item.quantity);
@@ -26,9 +28,26 @@ const AnimatedListItem = ({
     }
   };
 
+  const handleRowClick = e => {
+    if (!isEditMode || !onSelectToggle) return;
+    const target = e.target;
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('[role="checkbox"]') ||
+      target.closest('[data-emoji-picker]')
+    ) {
+      return;
+    }
+    onSelectToggle();
+  };
+
   return (
     <div
-      className={`flex items-center py-2 border-b last:border-b-0 ${isPending ? 'opacity-60 pointer-events-none' : ''}`}
+      className={`flex items-center py-2 border-b last:border-b-0 ${isPending ? 'opacity-60 pointer-events-none' : ''} ${isEditMode && isSelected ? 'bg-muted/40 ring-1 ring-primary/20' : ''}`}
+      role={isEditMode ? 'listitem' : undefined}
+      aria-selected={isEditMode ? isSelected : undefined}
+      onClick={handleRowClick}
     >
       <AnimatedCheckbox
         checked={item.is_packed}
@@ -37,7 +56,7 @@ const AnimatedListItem = ({
         className="mr-3 flex-shrink-0"
       />
 
-      <div className="flex items-center gap-2 mr-2">
+      <div className={`flex items-center gap-2 mr-2 ${isEditMode ? 'cursor-pointer' : ''}`} data-emoji-picker>
         <EmojiPicker
           value={item.emoji || '📦'}
           onChange={onUpdateEmoji}
@@ -103,7 +122,7 @@ const AnimatedListItem = ({
           )}
         </div>
       ) : (
-        <div className="text-sm font-medium text-muted-foreground ml-2">
+        <div className={`text-sm font-medium ml-2 ${isEditMode ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
           {item.quantity > 1 && `×${item.quantity}`}
         </div>
       )}
