@@ -34,6 +34,7 @@ import {
   CalendarIcon,
   ChevronDown,
   ChevronRight,
+  Share2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -45,11 +46,11 @@ import AnimatedListItem from '../components/list/AnimatedListItem';
 import { Input } from '@/components/ui/input';
 import ConfettiEffect from '../components/animated/ConfettiEffect';
 import { motion, AnimatePresence } from 'framer-motion';
-import FlightDetailsDialog from '../components/flights/FlightDetailsDialog';
-import FlightDetailsCard from '../components/flights/FlightDetailsCard';
+// Flight details temporarily disabled
 import { TipList } from '@/api/entities';
 import TipListSection from '../components/tips/TipListSection';
 import { generateEmojiForItem } from '@/utils/emojiGenerator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function ListDetailPage() {
   const CATEGORY_ORDER = ['clothing', 'toiletries', 'tech', 'gear', 'essentials', 'additional'];
@@ -67,7 +68,7 @@ export default function ListDetailPage() {
     weather_dependent: false,
   });
   const [showConfetti, setShowConfetti] = useState(false);
-  const [showFlightDialog, setShowFlightDialog] = useState(false);
+  // const [showFlightDialog, setShowFlightDialog] = useState(false);
   const [currentDestinationIndex, setCurrentDestinationIndex] = useState(0);
   const [dayBeforeTips, setDayBeforeTips] = useState([]);
   const [beforeLeavingTips, setBeforeLeavingTips] = useState([]);
@@ -172,9 +173,21 @@ export default function ListDetailPage() {
   useEffect(() => {
     if (editingTripName && tripNameInputRef.current) {
       tripNameInputRef.current.focus();
-      tripNameInputRef.current.select();
+      tripNameInputRef.current.select?.();
     }
   }, [editingTripName]);
+
+  // Auto-size the title editor to keep layout stable while editing
+  useEffect(() => {
+    if (editingTripName && tripNameInputRef.current) {
+      const el = tripNameInputRef.current;
+      // textarea autosize
+      if (el && 'style' in el) {
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+      }
+    }
+  }, [editingTripName, tempTripName]);
 
   // Escape key navigation
   useEffect(() => {
@@ -342,7 +355,8 @@ export default function ListDetailPage() {
       checkCategoryCompletion(updatedItems, category);
 
       // After state settles, scroll so the next unchecked item aligns to the old row position
-      if (clickedViewportY != null) {
+      // Only auto-scroll when the user CHECKS an item (not when unchecking)
+      if (clickedViewportY != null && newPackedState) {
         const delay = !wasCompleteBefore && isCompleteAfter ? 220 : 0; // wait for collapse animation
         setTimeout(() => {
           const nextIndex = findNextUncheckedIndex(updatedItems, itemIndex);
@@ -560,10 +574,11 @@ export default function ListDetailPage() {
     }
   };
 
-  const handleAddFlightDetails = destinationIndex => {
-    setCurrentDestinationIndex(destinationIndex);
-    setShowFlightDialog(true);
-  };
+  // Flight details temporarily disabled
+  // const handleAddFlightDetails = destinationIndex => {
+  //   setCurrentDestinationIndex(destinationIndex);
+  //   setShowFlightDialog(true);
+  // };
 
   const handleTripNameClick = () => {
     const currentName = list?.name || list?.destinations?.[0]?.location || 'Trip';
@@ -600,6 +615,7 @@ export default function ListDetailPage() {
 
   const handleTripNameKeyDown = e => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleTripNameSave();
     } else if (e.key === 'Escape') {
       setEditingTripName(false);
@@ -607,36 +623,7 @@ export default function ListDetailPage() {
     }
   };
 
-  const handleFlightSelected = async flightDetails => {
-    if (!list) return;
-
-    try {
-      const updatedDestinations = [...list.destinations];
-      updatedDestinations[currentDestinationIndex] = {
-        ...updatedDestinations[currentDestinationIndex],
-        flight: flightDetails,
-      };
-
-      await PackingList.update(list.id, { destinations: updatedDestinations });
-
-      setList({
-        ...list,
-        destinations: updatedDestinations,
-      });
-
-      toast({
-        title: 'Flight details added',
-        description: 'Your flight information has been saved to the trip',
-      });
-    } catch (error) {
-      console.error('Error adding flight details:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add flight details',
-        variant: 'destructive',
-      });
-    }
-  };
+  // const handleFlightSelected = async flightDetails => {};
 
   const getDateRange = () => {
     if (!list) return { start: new Date(), end: new Date() };
@@ -683,6 +670,60 @@ export default function ListDetailPage() {
       });
     } catch (error) {
       console.error('Error toggling favorite:', error);
+    }
+  };
+
+  const formatListForShare = () => {
+    if (!list) return '';
+    const title = list?.name || list?.destinations?.[0]?.location || 'Trip';
+    const { start, end } = getDateRange();
+    const dateRange = start && end ? formatDateRange(start, end) : '';
+
+    const lines = [];
+    lines.push(`${title}`);
+    if (dateRange) lines.push(`${dateRange}`);
+    lines.push('');
+
+    CATEGORY_ORDER.forEach(category => {
+      const items = (list.items || []).filter(i => i.category === category);
+      if (items.length === 0) return;
+      lines.push(category.toUpperCase());
+      items.forEach(item => {
+        const check = item.is_packed ? '[x]' : '[ ]';
+        const qty = item.quantity && item.quantity !== 1 ? `${item.quantity}x ` : '';
+        const emoji = item.emoji ? `${item.emoji} ` : '';
+        lines.push(`- ${check} ${qty}${emoji}${item.name}`);
+      });
+      lines.push('');
+    });
+
+    return lines.join('\n');
+  };
+
+  const handleShare = async () => {
+    try {
+      const text = formatListForShare();
+      const title = list?.name || list?.destinations?.[0]?.location || 'Packing List';
+      if (navigator.share) {
+        await navigator.share({ title, text });
+        return;
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        toast({ title: 'Copied to clipboard', description: 'List text is ready to paste' });
+        return;
+      }
+      // Fallback: temporary textarea
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      toast({ title: 'Copied to clipboard', description: 'List text is ready to paste' });
+    } catch (error) {
+      console.error('Share failed:', error);
+      toast({ title: 'Share failed', description: 'Unable to share the list', variant: 'destructive' });
     }
   };
 
@@ -774,8 +815,8 @@ export default function ListDetailPage() {
     <div className="p-6 relative">
       <ConfettiEffect active={showConfetti} />
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
+        <div className="flex items-start justify-between mb-6 gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <Button
               variant="ghost"
               size="icon"
@@ -784,28 +825,20 @@ export default function ListDetailPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div>
+            <div className="min-w-0">
               {editingTripName ? (
-                <input
+                <textarea
                   ref={tripNameInputRef}
                   value={tempTripName}
                   onChange={e => setTempTripName(e.target.value)}
                   onKeyDown={handleTripNameKeyDown}
                   onBlur={handleTripNameSave}
-                  className="text-2xl font-bold cursor-pointer"
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    padding: '0',
-                    margin: '0',
-                    width: `${Math.max(300, tempTripName.length * 14)}px`,
-                    maxWidth: '100vw',
-                  }}
+                  rows={1}
+                  className="text-2xl font-bold leading-tight cursor-text bg-transparent border-0 outline-none p-0 m-0 resize-none w-full"
                 />
               ) : (
                 <h1
-                  className="text-2xl font-bold line-clamp-1 cursor-pointer hover:text-blue-600 transition-colors"
+                  className="text-2xl font-bold line-clamp-2 md:line-clamp-1 cursor-pointer hover:text-blue-600 transition-colors"
                   onClick={handleTripNameClick}
                   title="Click to edit trip name"
                 >
@@ -820,33 +853,56 @@ export default function ListDetailPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={list.is_favorite ? 'text-yellow-400' : 'text-gray-400'}
-              onClick={toggleFavorite}
-            >
-              <Star className="w-6 h-6" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditMode(!isEditMode)}
-            >
-              {isEditMode ? (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Done
-                </>
-              ) : (
-                <>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </>
-              )}
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="flex items-center gap-1.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={list.is_favorite ? 'text-yellow-400' : 'text-gray-400'}
+                    onClick={toggleFavorite}
+                    aria-label={list.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <Star className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Favorite</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleShare}
+                    aria-label="Share"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Share</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    aria-label={isEditMode ? 'Done' : 'Edit'}
+                  >
+                    {isEditMode ? (
+                      <Save className="w-4 h-4" />
+                    ) : (
+                      <Edit className="w-4 h-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{isEditMode ? 'Done' : 'Edit'}</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
 
         {/* Trip Details Toggle Button */}
@@ -871,38 +927,14 @@ export default function ListDetailPage() {
                       key={index}
                       className="space-y-4"
                     >
-                      <div className="flex justify-between items-center border-b pb-4 last:border-0 last:pb-0">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
+                      <div className="border-b pb-4 last:border-0 last:pb-0">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 min-w-0">
                             <MapPin className="w-4 h-4 text-gray-400" />
-                            <h3 className="font-medium">{destination.location}</h3>
+                            <h3 className="font-medium truncate">
+                              {destination.location}
+                            </h3>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <CalendarIcon className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-600">
-                              {destination.start_date && destination.end_date ? (
-                                <>
-                                  {format(new Date(destination.start_date), 'MMM d, yyyy')} —{' '}
-                                  {format(new Date(destination.end_date), 'MMM d, yyyy')}
-                                </>
-                              ) : (
-                                'Dates not set'
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {!destination.flight && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAddFlightDetails(index)}
-                           className="text-primary hover:text-primary hover:bg-primary/10"
-                            >
-                              <Plane className="w-4 h-4 mr-2" />
-                              Add Flight Details
-                            </Button>
-                          )}
                           {destination.weather && (
                             <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full text-sm">
                               {getWeatherIcon(destination.weather.conditions)}
@@ -912,15 +944,17 @@ export default function ListDetailPage() {
                             </div>
                           )}
                         </div>
+                        <div className="mt-2 flex items-center gap-2 text-gray-600">
+                          <CalendarIcon className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm">
+                            {destination.start_date && destination.end_date
+                              ? formatDateRange(destination.start_date, destination.end_date)
+                              : 'Dates not set'}
+                          </span>
+                        </div>
                       </div>
 
-                      {destination.flight && (
-                        <FlightDetailsCard
-                          flight={destination.flight}
-                          destinationDate={destination.start_date}
-                          onEditFlight={() => handleAddFlightDetails(index)}
-                        />
-                      )}
+                      {/* Flight details UI disabled for now */}
                     </div>
                   ))
                 ) : (
@@ -1183,13 +1217,7 @@ export default function ListDetailPage() {
         {renderTipLists()}
       </div>
 
-      <FlightDetailsDialog
-        open={showFlightDialog}
-        onOpenChange={setShowFlightDialog}
-        destination={list?.destinations?.[currentDestinationIndex]}
-        startDate={list?.destinations?.[currentDestinationIndex]?.start_date}
-        onFlightSelected={handleFlightSelected}
-      />
+      {null}
     </div>
   );
 }
