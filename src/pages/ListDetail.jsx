@@ -317,16 +317,19 @@ export default function ListDetailPage() {
     // Capture the clicked row's vertical position before state changes
     const clickedRef = itemRowRefs.current[itemIndex];
     const scrollContainer = clickedRef?.closest('main') || document.querySelector('main') || null;
-    const containerRect = scrollContainer?.getBoundingClientRect();
     const clickedRect = clickedRef?.getBoundingClientRect();
-    const clickedTop = clickedRect && containerRect && scrollContainer
-      ? clickedRect.top - containerRect.top + scrollContainer.scrollTop
-      : null;
+    const clickedViewportY = clickedRect ? clickedRect.top : null;
 
     updatedItems[itemIndex] = {
       ...updatedItems[itemIndex],
       is_packed: newPackedState,
     };
+
+    const category = updatedItems[itemIndex].category;
+    const wasCompleteBefore = categoryCompletionRef.current[category] === true;
+    const isCompleteAfter = updatedItems
+      .filter(i => i.category === category)
+      .every(i => i.is_packed);
 
     try {
       // Update API first, then update UI
@@ -336,22 +339,22 @@ export default function ListDetailPage() {
       setList({ ...list, items: updatedItems });
 
       // Check category completion after successful update
-      checkCategoryCompletion(updatedItems, updatedItems[itemIndex].category);
+      checkCategoryCompletion(updatedItems, category);
 
       // After state settles, scroll so the next unchecked item aligns to the old row position
-      if (clickedTop != null) {
+      if (clickedViewportY != null) {
+        const delay = !wasCompleteBefore && isCompleteAfter ? 220 : 0; // wait for collapse animation
         setTimeout(() => {
           const nextIndex = findNextUncheckedIndex(updatedItems, itemIndex);
           if (nextIndex != null) {
             const nextRef = itemRowRefs.current[nextIndex];
             if (nextRef && scrollContainer) {
               const nextRect = nextRef.getBoundingClientRect();
-              const nextTop = nextRect.top - containerRect.top + scrollContainer.scrollTop;
-              const delta = nextTop - clickedTop;
-              scrollContainer.scrollTo({ top: scrollContainer.scrollTop + delta, behavior: 'smooth' });
+              const delta = nextRect.top - clickedViewportY;
+              scrollContainer.scrollBy({ top: delta, behavior: 'smooth' });
             }
           }
-        }, 0);
+        }, delay);
       }
     } catch (error) {
       console.error('Error updating item:', error);
@@ -1120,8 +1123,16 @@ export default function ListDetailPage() {
                     </div>
                   )}
                 </CardHeader>
-                {!isCollapsed && (
-                  <CardContent className="pt-0">
+                <AnimatePresence initial={false}>
+                  {!isCollapsed && (
+                  <CardContent
+                    className="pt-0"
+                    as={motion.div}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  >
                     <div className="divide-y">
                       <AnimatePresence initial={false}>
                         {categoryItems.map((item, index) => {
@@ -1164,6 +1175,7 @@ export default function ListDetailPage() {
                     </div>
                   </CardContent>
                 )}
+                </AnimatePresence>
               </Card>
             );
           })}
